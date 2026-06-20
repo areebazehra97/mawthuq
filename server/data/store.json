@@ -960,5 +960,469 @@
       "conditionalMax": 79
     }
   },
+  "projects": [
+    {
+      "id": "proj-001",
+      "name": "North Riyadh Integrated Development",
+      "arabicName": "مشروع شمال الرياض المتكامل",
+      "location": "Riyadh, KSA",
+      "status": "Active",
+      "description": "Integrated residential and commercial development — main civil, structural, MEP, and fit-out works across 4 towers and ground-floor podium retail.",
+      "timeline": "Q4 2026 – Q3 2028",
+      "categories": [
+        "General Contracting",
+        "MEP",
+        "Civil & Trading"
+      ],
+      "reviewers": [
+        "Procurement Manager",
+        "Finance Reviewer",
+        "HSE Reviewer"
+      ],
+      "requiredExperience": [
+        "Minimum 10 years operating in the KSA construction market",
+        "Completed ≥ 3 comparable projects (SAR 250M+) within the last 7 years",
+        "Demonstrated experience in residential high-rise construction"
+      ],
+      "requiredCertifications": [
+        "ISO 9001:2015 Quality Management System",
+        "ISO 45001 Occupational Health & Safety",
+        "ZATCA active tax compliance certificate",
+        "Saudi Contractors Authority — Class I or II"
+      ],
+      "config": {
+        "categories": [
+          {
+            "name": "General Contracting",
+            "subCategories": [
+              "Civil Works",
+              "Building Construction",
+              "Demolition"
+            ],
+            "requiredDocuments": [
+              "Commercial Registration",
+              "Contractor Classification",
+              "ZATCA Certificate",
+              "Audited Financial Statements",
+              "Project References",
+              "ISO Certificates",
+              "HSE Reports",
+              "Local Content Documents"
+            ]
+          },
+          {
+            "name": "MEP",
+            "subCategories": [
+              "Mechanical",
+              "Electrical",
+              "Plumbing"
+            ],
+            "requiredDocuments": [
+              "Commercial Registration",
+              "ZATCA Certificate",
+              "ISO Certificates",
+              "Saudization Evidence",
+              "Project References",
+              "HSE Reports"
+            ]
+          },
+          {
+            "name": "Civil & Trading",
+            "subCategories": [
+              "Earthworks",
+              "Road Works",
+              "Trading"
+            ],
+            "requiredDocuments": [
+              "Commercial Registration",
+              "Contractor Classification",
+              "ZATCA Certificate",
+              "Audited Financial Statements"
+            ]
+          }
+        ],
+        "scoringWeights": {
+          "compliance": 35,
+          "financial": 25,
+          "technical": 20,
+          "hse": 10,
+          "localization": 10
+        },
+        "decisionThresholds": {
+          "pass": 80,
+          "conditionalMin": 60,
+          "conditionalMax": 79
+        },
+        "hardGateRules": [
+          "Commercial Registration must be valid on review date",
+          "ZATCA certificate is mandatory for tender release",
+          "At least 3 relevant project references must be evidenced",
+          "Any expired core certification triggers manual exception review"
+        ],
+        "expiryReminderDays": [
+          30,
+          60,
+          90
+        ]
+      },
+      "startDate": "2026-04-01",
+      "createdAt": "2026-06-01T09:00:00.000Z",
+      "updatedAt": "2026-06-10T09:00:00.000Z"
+    },
+    {
+      "id": "proj-002",
+      "name": "NEOM Linear City — Groundworks",
+      "arabicName": "نيوم — المدينة الخطية: أعمال الأساسات",
+      "location": "Tabuk, KSA",
+      "status": "Tendering",
+      "categories": [
+        "Civil & Infrastructure",
+        "Structural Steel",
+        "HVAC"
+      ],
+      "startDate": "2026-05-01",
+      "targetCompletionDate": "2028-12-31",
+      "createdAt": "2026-06-02T09:00:00.000Z",
+      "updatedAt": "2026-06-11T09:00:00.000Z"
+    },
+    {
+      "id": "proj-003",
+      "name": "Diriyah Gate — Hospitality Zone",
+      "arabicName": "بوابة الدرعية — المنطقة الفندقية",
+      "location": "Diriyah, Riyadh",
+      "status": "Planning",
+      "categories": [
+        "Facade & Cladding",
+        "MEP",
+        "Fire Protection"
+      ],
+      "startDate": "2026-06-01",
+      "targetCompletionDate": "2027-09-30",
+      "createdAt": "2026-06-03T09:00:00.000Z",
+      "updatedAt": "2026-06-12T09:00:00.000Z"
+    }
+  ],
+  "packages": [
+    {
+      "id": "pkg-proj-001",
+      "projectId": "proj-001",
+      "name": "Main Works Prequalification Package",
+      "category": "Building & Civil Works",
+      "valueBand": "SAR 250M – SAR 1B",
+      "status": "Open",
+      "readinessStatus": "Vendor Gap",
+      "requiredVendorCount": 5,
+      "deadline": "2026-08-15",
+      "criteria": [
+        "ISO 9001:2015 Quality Management System",
+        "ISO 45001 Occupational Health & Safety",
+        "ZATCA active tax compliance certificate",
+        "Saudi Contractors Authority — Class I or II"
+      ],
+      "primaryForProject": true,
+      "createdAt": "2026-06-01T09:30:00.000Z",
+      "updatedAt": "2026-06-10T09:30:00.000Z"
+    },
+    {
+      "id": "pkg-proj-002",
+      "projectId": "proj-002",
+      "name": "Civil Groundworks Prequalification",
+      "category": "Civil & Infrastructure",
+      "valueBand": "SAR 1B+",
+      "status": "Evaluating",
+      "readinessStatus": "Vendor Gap",
+      "requiredVendorCount": 3,
+      "primaryForProject": true,
+      "createdAt": "2026-06-02T09:30:00.000Z",
+      "updatedAt": "2026-06-11T09:30:00.000Z"
+    },
+    {
+      "id": "pkg-proj-003",
+      "projectId": "proj-003",
+      "name": "Hospitality Fit-Out Prequalification",
+      "category": "Fit-Out & Interiors",
+      "valueBand": "SAR 100M – SAR 250M",
+      "status": "Open",
+      "readinessStatus": "Vendor Gap",
+      "requiredVendorCount": 3,
+      "primaryForProject": true,
+      "createdAt": "2026-06-03T09:30:00.000Z",
+      "updatedAt": "2026-06-12T09:30:00.000Z"
+    }
+  ],
+  "vendorPackageApplications": [
+    {
+      "id": "pvl-001",
+      "vendorId": "vmv-005",
+      "projectId": "proj-001",
+      "packageId": "pkg-proj-001",
+      "applicationStatus": "Review Complete",
+      "qualificationStatus": "Qualified",
+      "score": 88,
+      "recommendation": "PASS",
+      "source": "added_from_vm",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-002",
+      "vendorId": "vmv-003",
+      "projectId": "proj-001",
+      "packageId": "pkg-proj-001",
+      "applicationStatus": "In Review",
+      "qualificationStatus": "Pending Review",
+      "score": 89,
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-003",
+      "vendorId": "vmv-007",
+      "projectId": "proj-001",
+      "packageId": "pkg-proj-001",
+      "applicationStatus": "Invited",
+      "qualificationStatus": "Not Started",
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-004",
+      "vendorId": "vmv-002",
+      "projectId": "proj-001",
+      "packageId": "pkg-proj-001",
+      "applicationStatus": "Review Complete",
+      "qualificationStatus": "Rejected",
+      "score": 48,
+      "recommendation": "FAIL",
+      "openBlockers": [
+        "Category mismatch — landscaping scope not required for this package"
+      ],
+      "rationale": "Vendor does not meet civil/structural scope requirements.",
+      "source": "added_from_vm",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-005",
+      "vendorId": "vmv-008",
+      "projectId": "proj-001",
+      "packageId": "pkg-proj-001",
+      "applicationStatus": "Submitted",
+      "qualificationStatus": "Pending Review",
+      "score": 82,
+      "openBlockers": [
+        "ZATCA certificate expiring 9 Jul 2025 — renewal required before award"
+      ],
+      "source": "added_from_vm",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-006",
+      "vendorId": "vmv-001",
+      "projectId": "proj-002",
+      "packageId": "pkg-proj-002",
+      "applicationStatus": "Submitted",
+      "qualificationStatus": "Pending Review",
+      "score": 87,
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-007",
+      "vendorId": "vmv-005",
+      "projectId": "proj-002",
+      "packageId": "pkg-proj-002",
+      "applicationStatus": "In Review",
+      "qualificationStatus": "Qualified",
+      "score": 88,
+      "recommendation": "PASS",
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-008",
+      "vendorId": "vmv-004",
+      "projectId": "proj-002",
+      "packageId": "pkg-proj-002",
+      "applicationStatus": "Opened",
+      "qualificationStatus": "Not Started",
+      "openBlockers": [
+        "ZATCA certificate expired 31 Jan 2025 — must renew before submission"
+      ],
+      "source": "added_from_vm",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-009",
+      "vendorId": "vmv-008",
+      "projectId": "proj-002",
+      "packageId": "pkg-proj-002",
+      "applicationStatus": "Invited",
+      "qualificationStatus": "Not Started",
+      "openBlockers": [
+        "ZATCA certificate expiring 9 Jul 2025"
+      ],
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-010",
+      "vendorId": "vmv-007",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "applicationStatus": "In Review",
+      "qualificationStatus": "Qualified",
+      "score": 78,
+      "recommendation": "PASS",
+      "source": "added_from_vm",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-011",
+      "vendorId": "vmv-003",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "applicationStatus": "Submitted",
+      "qualificationStatus": "Pending Review",
+      "score": 76,
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    },
+    {
+      "id": "pvl-012",
+      "vendorId": "vmv-004",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "applicationStatus": "Invited",
+      "qualificationStatus": "Not Started",
+      "openBlockers": [
+        "ZATCA certificate expired",
+        "Under global review"
+      ],
+      "source": "invited",
+      "createdAt": "2026-06-01T10:00:00.000Z",
+      "updatedAt": "2026-06-16T10:00:00.000Z",
+      "lastActivityAt": "2026-06-16T10:00:00.000Z"
+    }
+  ],
+  "invitations": [
+    {
+      "id": "inv-001",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "companyName": "Al-Mamlakah Contracting Co.",
+      "contactName": "Khalid Al-Otaibi",
+      "contactEmail": "k.otaibi@almamlakah.sa",
+      "category": "General Contracting",
+      "status": "Submitted",
+      "invitedAt": "02 Jun 2026",
+      "expiresAt": "02 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-002",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "companyName": "Gulf Electro-Mechanical Ltd.",
+      "contactName": "Sara Al-Harbi",
+      "contactEmail": "s.alharbi@gulfem.sa",
+      "category": "MEP (Mechanical, Electrical, Plumbing)",
+      "status": "In Progress",
+      "invitedAt": "08 Jun 2026",
+      "expiresAt": "08 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-003",
+      "projectId": "proj-003",
+      "packageId": "pkg-proj-003",
+      "companyName": "Desert Climate Systems",
+      "contactName": "Mohammed Al-Zahrani",
+      "contactEmail": "m.zahrani@desertclimate.sa",
+      "category": "HVAC",
+      "status": "Opened",
+      "invitedAt": "10 Jun 2026",
+      "expiresAt": "10 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-004",
+      "companyName": "Arabian Steel Fabricators",
+      "contactName": "Faisal Al-Ghamdi",
+      "contactEmail": "f.ghamdi@arabiansteel.sa",
+      "category": "Structural Steel",
+      "status": "Invited",
+      "invitedAt": "14 Jun 2026",
+      "expiresAt": "14 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-005",
+      "companyName": "Riyadh Infrastructure Partners",
+      "contactName": "Turki Al-Mutairi",
+      "contactEmail": "turki@rip-contracting.sa",
+      "category": "Civil & Infrastructure",
+      "status": "Expired",
+      "invitedAt": "01 May 2026",
+      "expiresAt": "01 Jun 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-006",
+      "companyName": "SafeGuard Fire Systems",
+      "contactName": "Abdulrahman Nassar",
+      "contactEmail": "a.nassar@safeguardfire.com",
+      "category": "Fire Protection",
+      "status": "Bounced",
+      "invitedAt": "12 Jun 2026",
+      "expiresAt": "12 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    },
+    {
+      "id": "inv-007",
+      "companyName": "Luban Facade & Cladding",
+      "contactName": "Ibrahim Al-Dosari",
+      "contactEmail": "i.dosari@luban-sa.com",
+      "category": "Facade & Cladding",
+      "status": "Declined",
+      "invitedAt": "05 Jun 2026",
+      "expiresAt": "05 Jul 2026",
+      "createdAt": "2026-06-01T11:00:00.000Z",
+      "updatedAt": "2026-06-16T11:00:00.000Z",
+      "lastActivityAt": "2026-06-16T11:00:00.000Z"
+    }
+  ],
   "reports": {}
 }
