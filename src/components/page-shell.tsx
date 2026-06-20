@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PanelLeft, X } from "lucide-react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
 import { navigationItems } from "@/data/seed";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,11 +9,6 @@ import { cn } from "@/lib/utils";
 export function PageShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const location = useLocation();
-  const _currentItem =
-    navigationItems.find((item) => item.path === location.pathname) ?? navigationItems[0];
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
 
