@@ -50,8 +50,8 @@ export const seededPkgLinks: PackageVendorLink[] = [
   // ── proj-001: North Riyadh — Main Works Prequalification ──────────────────
 
   {
-    id: "pvl-001", vendorId: "vmv-001", projectId: "proj-001",
-    appStatus: "Review Complete", qualStatus: "Qualified", score: 92,
+    id: "pvl-001", vendorId: "vmv-005", projectId: "proj-001",
+    appStatus: "Review Complete", qualStatus: "Qualified", score: 88,
     addedDate: "2025-03-01", lastUpdated: "2025-05-20",
     source: "added_from_vm",
   },
@@ -62,7 +62,7 @@ export const seededPkgLinks: PackageVendorLink[] = [
     source: "invited",
   },
   {
-    id: "pvl-003", vendorId: "vmv-005", projectId: "proj-001",
+    id: "pvl-003", vendorId: "vmv-007", projectId: "proj-001",
     appStatus: "Invited", qualStatus: "Not Started",
     addedDate: "2025-06-01", lastUpdated: "2025-06-01",
     source: "invited",
@@ -137,9 +137,10 @@ export const seededPkgLinks: PackageVendorLink[] = [
 
 // ── Readiness helper ──────────────────────────────────────────────────────────
 
-const REQUIRED_VENDORS = 3;
-
-export function getReadinessStatus(links: PackageVendorLink[]): PkgReadinessStatus {
+export function getReadinessStatus(
+  links: PackageVendorLink[],
+  requiredVendorCount = 3,
+): PkgReadinessStatus {
   if (links.length === 0) return "Not Started";
 
   const shortlisted = links.filter(l => l.qualStatus === "Shortlisted").length;
@@ -149,10 +150,10 @@ export function getReadinessStatus(links: PackageVendorLink[]): PkgReadinessStat
     ["Submitted", "In Review", "Clarification Requested", "Review Complete"].includes(l.appStatus)
   ).length;
 
-  if (shortlisted >= REQUIRED_VENDORS) return "Ready for Tender";
-  if (qualified + shortlisted >= REQUIRED_VENDORS) return "Ready for Shortlist";
-  if (inReview > 0) return "Under Review";
+  if (shortlisted >= requiredVendorCount) return "Ready for Tender";
+  if (qualified + shortlisted >= requiredVendorCount) return "Ready for Shortlist";
   if (submitted === 0) return "Awaiting Submissions";
-  if (qualified + shortlisted < REQUIRED_VENDORS) return "Vendor Gap";
+  if (qualified + shortlisted < requiredVendorCount) return "Vendor Gap";
+  if (inReview > 0) return "Under Review";
   return "Sourcing Vendors";
 }

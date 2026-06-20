@@ -13,6 +13,7 @@ import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendo
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
+import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { useInvitations } from "@/hooks/use-invitations";
 import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
@@ -21,7 +22,7 @@ import {
   mapBackendInvitationWithContext,
 } from "@/lib/portfolio";
 import { cn } from "@/lib/utils";
-import type { InvitationStatus, Project, ProjectStatus, VendorInvitation } from "@/types";
+import type { InvitationStatus, Project, ProjectStatus, ReviewStage, VendorInvitation } from "@/types";
 
 /* ── Style maps ──────────────────────────────────────────────────────────── */
 
@@ -38,6 +39,15 @@ const globalStatusCls: Record<VendorGlobalStatus, string> = {
   "Suspended":    "bg-orange-500/10 text-orange-700 border-orange-400/40",
   "Blacklisted":  "bg-destructive/10 text-destructive border-destructive/40",
   "Inactive":     "bg-muted text-muted-foreground border-border",
+};
+
+const reviewStageCls: Record<ReviewStage, string> = {
+  Uploaded: "bg-muted text-muted-foreground border-border",
+  Extracted: "bg-info/10 text-info border-info/30",
+  Scored: "bg-warning/15 text-warning-foreground border-warning/40",
+  "In Review": "bg-warning/15 text-warning-foreground border-warning/40",
+  Approved: "bg-success/15 text-success border-success/40",
+  Rejected: "bg-destructive/10 text-destructive border-destructive/40",
 };
 
 const pkgAppStatusCls: Record<PkgAppStatus, string> = {
@@ -173,6 +183,7 @@ export function VendorIntakePage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { projects } = useProjects();
+  const { vendors: demoVendors } = useDemoVendors();
   const { primaryPackage } = useProjectPackages(projectId);
   const { applications, createApplication, updateApplication } = useApplications({
     packageId: primaryPackage?.id,
@@ -236,7 +247,7 @@ export function VendorIntakePage() {
     [linkedEntries],
   );
 
-  const effectiveCat = categories.includes(selectedCat) ? selectedCat : (categories[0] ?? "");
+  const effectiveCat = categories.includes(selectedCat) ? selectedCat : "";
 
   const catEntries = effectiveCat
     ? linkedEntries.filter(({vendor}) => vendor.tradeCategories.includes(effectiveCat))
@@ -245,13 +256,19 @@ export function VendorIntakePage() {
   const selectedEntry  = linkedEntries.find(({link}) => link.id === selectedLinkId) ?? null;
   const selectedLink   = selectedEntry?.link   ?? null;
   const selectedVendor = selectedEntry?.vendor ?? null;
+  const selectedGlobalVendor = selectedVendor
+    ? demoVendors.find((vendor) => vendor.name === selectedVendor.name)
+    : null;
 
   const vendorDocs     = selectedVendor ? vmDocuments.filter(d => d.vendorId === selectedVendor.id) : [];
   const vendorFindings = selectedVendor ? vmFindings.filter(f => f.vendorId === selectedVendor.id)  : [];
   const vendorActivity = selectedVendor ? vmActivity.filter(a => a.vendorId === selectedVendor.id)  : [];
   const vendorReviews  = selectedVendor ? vmReviews.filter(r => r.vendorId === selectedVendor.id)   : [];
 
-  const readinessStatus = getReadinessStatus(pkgLinks);
+  const readinessStatus = getReadinessStatus(
+    pkgLinks,
+    primaryPackage?.requiredVendorCount ?? 3,
+  );
   const readinessCounts = {
     total:       pkgLinks.length,
     invited:     pkgLinks.filter(l => l.appStatus === "Invited").length,
@@ -318,6 +335,10 @@ export function VendorIntakePage() {
         }),
       ),
     );
+    setProjectTab("applicants");
+    setSelectedCat("");
+    setSelected(newLinks[0]?.id ?? null);
+    setVendorTab("evaluation");
     toast.success(`${newLinks.length} vendor${newLinks.length !== 1 ? "s" : ""} added to package`);
   }
 
@@ -497,6 +518,26 @@ export function VendorIntakePage() {
                     Trade Categories
                   </p>
                   <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => selectCat("")}
+                      className={cn(
+                        "flex items-center justify-between rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors",
+                        effectiveCat === ""
+                          ? "border-primary/30 bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground hover:bg-muted/40",
+                      )}
+                    >
+                      <span className="truncate">All Applicants</span>
+                      <span className={cn(
+                        "ml-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[11px] font-semibold",
+                        effectiveCat === ""
+                          ? "bg-white/20 text-primary-foreground"
+                          : "bg-muted text-muted-foreground",
+                      )}>
+                        {linkedEntries.length}
+                      </span>
+                    </button>
                     {categories.map(cat => {
                       const count = linkedEntries.filter(({vendor}) => vendor.tradeCategories.includes(cat)).length;
                       const active = effectiveCat === cat;
@@ -582,6 +623,7 @@ export function VendorIntakePage() {
                   findings={vendorFindings}
                   activity={vendorActivity}
                   reviews={vendorReviews}
+                  globalReviewStage={selectedGlobalVendor?.reviewStage}
                   activeTab={activeVendorTab}
                   onTabChange={setVendorTab}
                   rationaleOpen={rationaleOpen}
@@ -605,10 +647,10 @@ export function VendorIntakePage() {
           projectId={project.id}
           projectName={project.name}
           existingVendorIds={new Set(pkgLinks.map(l => l.vendorId))}
-          onAdd={(links) => { void addVendorsToPackage(links); }}
-          onInvite={(inv, link) => {
+          onAdd={addVendorsToPackage}
+          onInvite={async (inv, link) => {
             if (!primaryPackage) return;
-            void Promise.all([
+            await Promise.all([
               createInvitation({
                 id: inv.id,
                 projectId: project.id,
@@ -630,9 +672,12 @@ export function VendorIntakePage() {
                 qualificationStatus: "Not Started",
                 source: link.source,
               }),
-            ]).then(() => {
-              toast.success(`Invitation sent to ${inv.companyName}`);
-            });
+            ]);
+            setProjectTab("applicants");
+            setSelectedCat("");
+            setSelected(link.id);
+            setVendorTab("evaluation");
+            toast.success(`Invitation sent to ${inv.companyName}`);
           }}
           onClose={() => setAddOpen(false)}
         />
@@ -696,6 +741,7 @@ function ApplicantCard({
 
 function VendorDetailPanel({
   link, vendor, docs, findings, activity, reviews,
+  globalReviewStage,
   activeTab, onTabChange,
   rationaleOpen, rationaleText, pendingQual,
   onSetRationaleText, onQualAction, onConfirmQual, onCancelQual, onUndo,
@@ -706,6 +752,7 @@ function VendorDetailPanel({
   findings: ReturnType<typeof vmFindings.filter>;
   activity: ReturnType<typeof vmActivity.filter>;
   reviews: ReturnType<typeof vmReviews.filter>;
+  globalReviewStage?: ReviewStage;
   activeTab: VendorTab;
   onTabChange: (t: VendorTab) => void;
   rationaleOpen: boolean;
@@ -727,9 +774,15 @@ function VendorDetailPanel({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold text-foreground">{vendor.name}</h2>
-              <span className={`status-pill ${globalStatusCls[vendor.globalStatus]}`}>
-                {vendor.globalStatus}
-              </span>
+              {globalReviewStage ? (
+                <span className={`status-pill ${reviewStageCls[globalReviewStage]}`}>
+                  Global: {globalReviewStage}
+                </span>
+              ) : (
+                <span className={`status-pill ${globalStatusCls[vendor.globalStatus]}`}>
+                  {vendor.globalStatus}
+                </span>
+              )}
               <span className={`status-pill ${pkgQualStatusCls[link.qualStatus]}`}>
                 {link.qualStatus}
               </span>
@@ -787,6 +840,7 @@ function VendorDetailPanel({
           vendor={vendor}
           reviews={reviews}
           openFindings={openFindings}
+          globalReviewStage={globalReviewStage}
           rationaleOpen={rationaleOpen}
           rationaleText={rationaleText}
           pendingQual={pendingQual}
@@ -1034,6 +1088,7 @@ function ReviewsTab({ reviews }: { reviews: ReturnType<typeof vmReviews.filter> 
 
 function EvaluationTab({
   link, vendor, reviews, openFindings,
+  globalReviewStage,
   rationaleOpen, rationaleText, pendingQual,
   onSetRationaleText, onQualAction, onConfirmQual, onCancelQual, onUndo,
 }: {
@@ -1041,6 +1096,7 @@ function EvaluationTab({
   vendor: VMVendor;
   reviews: ReturnType<typeof vmReviews.filter>;
   openFindings: ReturnType<typeof vmFindings.filter>;
+  globalReviewStage?: ReviewStage;
   rationaleOpen: boolean;
   rationaleText: string;
   pendingQual: PkgQualStatus | null;
@@ -1094,8 +1150,10 @@ function EvaluationTab({
           <p className="text-sm font-semibold text-foreground">Package Summary</p>
           <div className="space-y-2.5 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Global status</span>
-              <span className={`status-pill text-[10px] ${globalStatusCls[vendor.globalStatus]}`}>{vendor.globalStatus}</span>
+              <span className="text-muted-foreground">Global approval</span>
+              <span className={`status-pill text-[10px] ${globalReviewStage ? reviewStageCls[globalReviewStage] : globalStatusCls[vendor.globalStatus]}`}>
+                {globalReviewStage ?? vendor.globalStatus}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Document health</span>
@@ -1307,8 +1365,8 @@ function AddVendorsModal({
   projectId: string;
   projectName: string;
   existingVendorIds: Set<string>;
-  onAdd: (links: PackageVendorLink[]) => void;
-  onInvite: (inv: VendorInvitation, link: PackageVendorLink) => void;
+  onAdd: (links: PackageVendorLink[]) => Promise<void>;
+  onInvite: (inv: VendorInvitation, link: PackageVendorLink) => Promise<void>;
   onClose: () => void;
 }) {
   const [modalTab, setModalTab] = useState<"vm" | "invite">("vm");
@@ -1337,7 +1395,7 @@ function AddVendorsModal({
     });
   }
 
-  function handleAddSelected() {
+  async function handleAddSelected() {
     const now = today();
     const newLinks: PackageVendorLink[] = [...selectedIds].map(vendorId => ({
       id: `pvl-${Date.now()}-${vendorId}`,
@@ -1349,7 +1407,7 @@ function AddVendorsModal({
       lastUpdated: now,
       source: "added_from_vm" as const,
     }));
-    onAdd(newLinks);
+    await onAdd(newLinks);
     onClose();
   }
 
@@ -1357,7 +1415,7 @@ function AddVendorsModal({
     ? vmVendors.find(v => v.contactEmail.toLowerCase() === form.email.toLowerCase())
     : null;
 
-  function handleInviteSend() {
+  async function handleInviteSend() {
     if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
       setFormError("Company name, contact person, email, and trade category are required.");
       return;
@@ -1392,7 +1450,7 @@ function AddVendorsModal({
       lastUpdated: today(),
       source: "invited",
     };
-    onInvite(inv, link);
+    await onInvite(inv, link);
     onClose();
   }
 

@@ -67,7 +67,7 @@ const ATTENTION_PACKAGES: AttentionPackage[] = ([
     projectId: "proj-001",
     category: "Building & Civil Works",
     readiness: "Vendor Gap",
-    invited: 7, submitted: 3, qualified: 1, qualifiedRequired: 5,
+    invited: 4, submitted: 3, qualified: 1, qualifiedRequired: 5,
     mainBlocker: "Need 4 more qualified vendors",
     nextAction: "Add vendors",
     nextActionType: "add",

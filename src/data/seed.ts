@@ -882,6 +882,7 @@ function toQualificationStatus(
 
 function buildPackageReadiness(
   applications: VendorPackageApplication[],
+  requiredVendorCount: number,
 ): BackendPackage["readinessStatus"] {
   if (applications.length === 0) return "Not Started";
 
@@ -900,11 +901,11 @@ function buildPackageReadiness(
   const blocked = applications.filter((app) => (app.openBlockers?.length ?? 0) > 0).length;
 
   if (blocked > 0 && inReview === 0 && submitted === 0) return "Blocked";
-  if (shortlisted >= 3) return "Ready for Tender";
-  if (qualified + shortlisted >= 3) return "Ready for Shortlist";
-  if (inReview > 0) return "Under Review";
+  if (shortlisted >= requiredVendorCount) return "Ready for Tender";
+  if (qualified + shortlisted >= requiredVendorCount) return "Ready for Shortlist";
   if (submitted === 0) return "Awaiting Submissions";
-  if (qualified + shortlisted < 3) return "Vendor Gap";
+  if (qualified + shortlisted < requiredVendorCount) return "Vendor Gap";
+  if (inReview > 0) return "Under Review";
   return "Sourcing Vendors";
 }
 
@@ -969,8 +970,11 @@ export const seededBackendPackages: BackendPackage[] = seededProjects.map((proje
         : project.status === "Tendering"
           ? "Evaluating"
           : "Open",
-    readinessStatus: buildPackageReadiness(projectApplications),
-    requiredVendorCount: 3,
+    readinessStatus: buildPackageReadiness(
+      projectApplications,
+      project.id === "proj-001" ? 5 : 3,
+    ),
+    requiredVendorCount: project.id === "proj-001" ? 5 : 3,
     deadline: project.registrationDeadline,
     criteria: project.requiredCertifications,
     primaryForProject: true,

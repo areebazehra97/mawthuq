@@ -172,10 +172,10 @@ export function derivePackageReadiness(
 
   if (shortlisted >= requiredVendorCount) return "Ready for Tender";
   if (qualified + shortlisted >= requiredVendorCount) return "Ready for Shortlist";
-  if (inReview > 0) return "Under Review";
   if (submitted === 0 && blocked) return "Blocked";
   if (submitted === 0) return "Awaiting Submissions";
   if (qualified + shortlisted < requiredVendorCount) return "Vendor Gap";
+  if (inReview > 0) return "Under Review";
   return "Sourcing Vendors";
 }
 

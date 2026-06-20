@@ -186,6 +186,15 @@ app.post("/api/applications", async (req, res) => {
   try {
     const state = await readState();
     const nextApplication = buildApplication(req.body as Record<string, unknown>);
+    const existingApplication = state.vendorPackageApplications.find(
+      (item) =>
+        item.vendorId === nextApplication.vendorId &&
+        item.packageId === nextApplication.packageId,
+    );
+    if (existingApplication) {
+      res.json(existingApplication);
+      return;
+    }
     state.vendorPackageApplications = [nextApplication, ...state.vendorPackageApplications];
     refreshPackageReadiness(state);
     await writeState(state);
