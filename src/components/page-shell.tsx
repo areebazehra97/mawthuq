@@ -38,6 +38,7 @@ export function PageShell() {
             { label: "Dashboard",     to: "/" },
             { label: "Projects",      to: "/projects" },
             { label: "Vendor Master", to: "/vendors" },
+            { label: "Invitations",   to: "/vendor-invitations" },
           ].map(({ label, to }) => (
             <NavLink
               key={to}
