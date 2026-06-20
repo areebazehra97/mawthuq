@@ -210,6 +210,7 @@ export function VendorIntakePage() {
   }, [projectId]);
 
   if (!selectedProject) return <Navigate to="/projects" replace />;
+  const project = selectedProject;
 
   const pkgLinks = useMemo(
     () => applications.map(mapApplicationToPackageLink),
@@ -309,7 +310,7 @@ export function VendorIntakePage() {
         createApplication({
           id: link.id,
           vendorId: link.vendorId,
-          projectId: selectedProject.id,
+          projectId: project.id,
           packageId: primaryPackage.id,
           applicationStatus: link.appStatus,
           qualificationStatus: link.qualStatus,
@@ -362,11 +363,11 @@ export function VendorIntakePage() {
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Project</p>
-            <p className="text-sm font-semibold text-foreground">{selectedProject.name}</p>
+            <p className="text-sm font-semibold text-foreground">{project.name}</p>
             <p className="text-[11px] text-muted-foreground">{selectedProject.arabicName}</p>
           </div>
           <BannerDivider />
-          <BannerField label="Package"    value={selectedProject.packageName} />
+          <BannerField label="Package"    value={project.packageName} />
           <BannerDivider />
           <BannerField label="Value Band" value={selectedProject.packageValueBand} />
           <BannerDivider />
@@ -416,13 +417,13 @@ export function VendorIntakePage() {
       {projectTab === "invitations" && (
         <InvitationsPanel
           invitations={invitations}
-          projectName={selectedProject.name}
-          packageName={selectedProject.packageName}
+          projectName={project.name}
+          packageName={project.packageName}
           onCreateInvitation={async (invitation) => {
             if (!primaryPackage) return;
             await createInvitation({
               id: invitation.id,
-              projectId: selectedProject.id,
+              projectId: project.id,
               packageId: primaryPackage.id,
               companyName: invitation.companyName,
               contactName: invitation.contactPerson,
@@ -601,8 +602,8 @@ export function VendorIntakePage() {
       {/* Add Vendors modal */}
       {addOpen && (
         <AddVendorsModal
-          projectId={selectedProject.id}
-          projectName={selectedProject.name}
+          projectId={project.id}
+          projectName={project.name}
           existingVendorIds={new Set(pkgLinks.map(l => l.vendorId))}
           onAdd={(links) => { void addVendorsToPackage(links); }}
           onInvite={(inv, link) => {
@@ -610,7 +611,7 @@ export function VendorIntakePage() {
             void Promise.all([
               createInvitation({
                 id: inv.id,
-                projectId: selectedProject.id,
+                projectId: project.id,
                 packageId: primaryPackage.id,
                 companyName: inv.companyName,
                 contactName: inv.contactPerson,
@@ -623,7 +624,7 @@ export function VendorIntakePage() {
               createApplication({
                 id: link.id,
                 vendorId: link.vendorId,
-                projectId: selectedProject.id,
+                projectId: project.id,
                 packageId: primaryPackage.id,
                 applicationStatus: "Invited",
                 qualificationStatus: "Not Started",
