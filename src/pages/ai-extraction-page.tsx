@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, FileSearch, Languages, Play, Quote, ShieldAlert } from "lucide-react";
-import { aiProgressStages, seededAiExtractions } from "@/data/seed";
+import { Link } from "react-router-dom";
+import { aiProgressStages } from "@/data/seed";
 import { DocumentStatusBadge } from "@/components/document-status-badge";
 import { SectionHeader } from "@/components/section-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -9,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { useVendorDocuments } from "@/hooks/use-vendor-documents";
+import { useVendorExtractions } from "@/hooks/use-vendor-extractions";
 
 export function AiExtractionPage() {
   const { vendors } = useDemoVendors();
   const { documents } = useVendorDocuments();
+  const { extractions, runExtraction } = useVendorExtractions();
   const [activeVendorId, setActiveVendorId] = useState<string>(vendors[0]?.id ?? "");
   const [runningVendorId, setRunningVendorId] = useState<string | null>(null);
   const [activeStageIndex, setActiveStageIndex] = useState<number>(-1);
@@ -23,7 +26,9 @@ export function AiExtractionPage() {
     () => documents.filter((document) => document.vendorId === activeVendorId),
     [documents, activeVendorId],
   );
-  const extractionFields = seededAiExtractions[activeVendorId] ?? [];
+  const activeExtraction =
+    extractions.find((extraction) => extraction.vendorId === activeVendorId) ?? null;
+  const extractionFields = activeExtraction?.fields ?? [];
 
   useEffect(() => {
     if (!runningVendorId) {
@@ -44,12 +49,17 @@ export function AiExtractionPage() {
             if (cancelled) {
               return;
             }
-            setCompletedVendorIds((current) => ({
-              ...current,
-              [runningVendorId]: true,
-            }));
-            setRunningVendorId(null);
-            setActiveStageIndex(-1);
+            void runExtraction(runningVendorId)
+              .then(() => {
+                setCompletedVendorIds((current) => ({
+                  ...current,
+                  [runningVendorId]: true,
+                }));
+              })
+              .finally(() => {
+                setRunningVendorId(null);
+                setActiveStageIndex(-1);
+              });
           }, 750);
         }
       }, index * 800);
@@ -60,7 +70,7 @@ export function AiExtractionPage() {
       cancelled = true;
       timers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [runningVendorId]);
+  }, [runExtraction, runningVendorId]);
 
   function runAnalysis(vendorId: string) {
     setActiveVendorId(vendorId);
@@ -80,8 +90,15 @@ export function AiExtractionPage() {
       <SectionHeader
         eyebrow="Evidence Layer"
         title="AI Extraction"
-        description="This demo AI system simulates bilingual document analysis, field extraction, citation generation, and review handoff. Every extracted value is shown with supporting evidence so the experience stays aligned with Mawthūq’s evidence-first operating model."
-        action={<Badge variant="accent">Demo AI Mode</Badge>}
+        description="This working AI layer classifies uploaded contractor documents, extracts citation-backed fields, and prepares a reviewer-safe evidence package. Unsupported or weak results are routed into fallback evidence mode instead of forcing false certainty."
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="accent">Working AI Path</Badge>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/demo-ops">Demo Ops</Link>
+            </Button>
+          </div>
+        }
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
@@ -95,7 +112,9 @@ export function AiExtractionPage() {
           <CardContent className="space-y-4">
             {vendors.map((vendor) => {
               const vendorDocuments = documents.filter((document) => document.vendorId === vendor.id);
-              const extractedCount = seededAiExtractions[vendor.id]?.length ?? 0;
+              const extractedCount =
+                extractions.find((extraction) => extraction.vendorId === vendor.id)?.fields
+                  .length ?? 0;
               const isActive = vendor.id === activeVendorId;
               const isRunning = vendor.id === runningVendorId;
               const isDone = completedVendorIds[vendor.id] ?? false;
@@ -103,18 +122,18 @@ export function AiExtractionPage() {
               return (
                 <div
                   key={vendor.id}
-                  className={`rounded-3xl border p-4 transition ${
-                    isActive ? "border-primary/40 bg-primary/10" : "border-slate-200 bg-white"
+                  className={`rounded-xl border p-4 transition ${
+                    isActive ? "border-primary/40 bg-primary/10" : "border-border bg-white"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <button
                       type="button"
-                      className="flex-1 text-left"
+                      className="min-w-0 flex-1 text-left"
                       onClick={() => setActiveVendorId(vendor.id)}
                     >
-                      <p className="font-semibold text-slate-900">{vendor.name}</p>
-                      <p className="mt-1 text-sm text-slate-500">{vendor.arabicName}</p>
+                      <p className="font-semibold text-foreground">{vendor.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{vendor.arabicName}</p>
                     </button>
                     <StatusBadge status={vendor.status} />
                   </div>
@@ -122,8 +141,8 @@ export function AiExtractionPage() {
                     <Metric label="Documents" value={String(vendorDocuments.length)} />
                     <Metric label="Fields Ready" value={String(extractedCount)} />
                   </div>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                       {isRunning ? "Running" : isDone ? "Ready for review" : "Awaiting analysis"}
                     </div>
                     <Button
@@ -155,19 +174,19 @@ export function AiExtractionPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="rounded-3xl border border-primary/30 bg-primary/10 p-4">
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
                 <div className="flex items-start gap-3">
-                  <ShieldAlert className="mt-0.5 h-5 w-5 text-slate-900" />
+                  <ShieldAlert className="mt-0.5 h-5 w-5 text-foreground" />
                   <div>
-                    <p className="font-semibold text-slate-900">No citation = no extraction</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-700">
+                    <p className="font-semibold text-foreground">No citation = no extraction</p>
+                    <p className="mt-1 text-sm leading-6 text-foreground">
                       This demo only shows extracted values when they include a source document, page number, confidence score, and evidence snippet.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
                 <SignalCard
                   icon={<FileSearch className="h-5 w-5" />}
                   label="Documents in Pack"
@@ -185,13 +204,59 @@ export function AiExtractionPage() {
                 />
                 <SignalCard
                   icon={<Bot className="h-5 w-5" />}
-                  label="Review Queue"
-                  value={hasCompletedForActiveVendor ? "Prepared" : "Pending"}
+                  label="Extraction Mode"
+                  value={
+                    activeExtraction?.sourceMode === "live"
+                      ? "Live Extraction"
+                      : activeExtraction?.sourceMode === "demo_supported"
+                        ? "Fallback Evidence Mode"
+                        : "Seeded Evidence"
+                  }
                 />
               </div>
 
+              {activeExtraction ? (
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {activeExtraction.sourceMode === "live"
+                          ? "Live Extraction Active"
+                          : activeExtraction.sourceMode === "demo_supported"
+                            ? "Fallback Evidence Mode Active"
+                            : "Seeded Evidence Active"}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {activeExtraction.warning}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        activeExtraction.sourceMode === "live" ? "success" : "warning"
+                      }
+                    >
+                      {activeExtraction.extractionStatus}
+                    </Badge>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    <MiniMeta
+                      label="Quality"
+                      value={activeExtraction.qualityStatus ?? "Reviewer action required"}
+                    />
+                    <MiniMeta
+                      label="Model"
+                      value={activeExtraction.modelName ?? "Seeded fallback"}
+                    />
+                    <MiniMeta
+                      label="Prompt Version"
+                      value={activeExtraction.promptVersion ?? "n/a"}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>Analysis progress</CardTitle>
                     <CardDescription>
@@ -208,16 +273,16 @@ export function AiExtractionPage() {
                       return (
                         <div
                           key={stage}
-                          className={`rounded-2xl border p-4 transition ${
+                          className={`rounded-lg border p-4 transition ${
                             isCurrent
                               ? "border-primary/40 bg-primary/10"
                               : isComplete
                                 ? "border-emerald-200 bg-emerald-50"
-                                : "border-slate-200 bg-slate-50"
+                                : "border-border bg-surface"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="font-medium text-slate-900">{stage}</p>
+                            <p className="font-medium text-foreground">{stage}</p>
                             {isComplete ? (
                               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                             ) : (
@@ -234,7 +299,7 @@ export function AiExtractionPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 shadow-none">
+                <Card className="border-border shadow-none">
                   <CardHeader>
                     <CardTitle>Source documents in scope</CardTitle>
                     <CardDescription>
@@ -243,19 +308,19 @@ export function AiExtractionPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {activeDocuments.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+                      <div className="rounded-lg border border-dashed border-slate-300 p-5 text-sm text-muted-foreground">
                         No intake documents are currently loaded for this vendor.
                       </div>
                     ) : (
                       activeDocuments.map((document) => (
                         <div
                           key={document.id}
-                          className="rounded-2xl border border-slate-200 p-4"
+                          className="rounded-lg border border-border p-4"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="font-medium text-slate-900">{document.documentType}</p>
-                              <p className="mt-1 text-sm text-slate-500">{document.name}</p>
+                              <p className="font-medium text-foreground">{document.documentType}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{document.name}</p>
                             </div>
                             <DocumentStatusBadge status={document.status} />
                           </div>
@@ -263,6 +328,16 @@ export function AiExtractionPage() {
                             <MiniMeta label="Language" value={document.language} />
                             <MiniMeta label="Upload Date" value={document.uploadDate} />
                             <MiniMeta label="Confidence" value={`${document.confidenceScore}%`} />
+                          </div>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <MiniMeta
+                              label="Support Level"
+                              value={document.supportLevel ?? "Pending classification"}
+                            />
+                            <MiniMeta
+                              label="Classified Type"
+                              value={document.classifiedDocumentType ?? document.documentType}
+                            />
                           </div>
                         </div>
                       ))
@@ -282,7 +357,7 @@ export function AiExtractionPage() {
             </CardHeader>
             <CardContent>
               {!hasCompletedForActiveVendor ? (
-                <div className="rounded-3xl border border-dashed border-slate-300 p-8 text-sm leading-6 text-slate-500">
+                <div className="rounded-xl border border-dashed border-slate-300 p-8 text-sm leading-6 text-muted-foreground">
                   Run AI Analysis to populate the review queue with extracted, citation-backed fields for {activeVendor?.name}.
                 </div>
               ) : (
@@ -290,14 +365,14 @@ export function AiExtractionPage() {
                   {extractionFields.map((field) => (
                     <div
                       key={field.label}
-                      className="rounded-3xl border border-slate-200 bg-white p-5"
+                      className="rounded-xl border border-border bg-white p-5"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                             {field.label}
                           </p>
-                          <p className="mt-3 text-xl font-semibold text-slate-900">{field.value}</p>
+                          <p className="mt-3 text-xl font-semibold text-foreground">{field.value}</p>
                         </div>
                         <Badge variant="neutral">{field.confidence}% confidence</Badge>
                       </div>
@@ -305,11 +380,11 @@ export function AiExtractionPage() {
                         <MiniMeta label="Source" value={field.sourceDocument} />
                         <MiniMeta label="Page" value={String(field.pageNumber)} />
                       </div>
-                      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <div className="mt-4 rounded-lg bg-surface p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                           Evidence Snippet
                         </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                        <p className="mt-2 text-sm leading-6 text-foreground">
                           {field.evidenceSnippet}
                         </p>
                       </div>
@@ -319,6 +394,50 @@ export function AiExtractionPage() {
               )}
             </CardContent>
           </Card>
+
+          {activeExtraction?.debug ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest extraction debug</CardTitle>
+                <CardDescription>
+                  Hidden demo diagnostics showing how the last run was processed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <MiniMeta
+                    label="Cache Hit"
+                    value={activeExtraction.debug.cacheHit ? "Yes" : "No"}
+                  />
+                  <MiniMeta
+                    label="Fallback Reason"
+                    value={activeExtraction.debug.fallbackReason ?? "None"}
+                  />
+                  <MiniMeta
+                    label="Error"
+                    value={activeExtraction.debug.errorMessage ?? "None"}
+                  />
+                  <MiniMeta
+                    label="Documents"
+                    value={String(activeExtraction.debug.documentSummaries.length)}
+                  />
+                </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {activeExtraction.debug.documentSummaries.map((summary) => (
+                    <div key={summary.documentId} className="rounded-xl border border-border p-4">
+                      <p className="font-semibold text-foreground">{summary.documentName}</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <MiniMeta label="Classified" value={summary.classifiedDocumentType} />
+                        <MiniMeta label="Support" value={summary.supportLevel} />
+                        <MiniMeta label="Text Source" value={summary.textSource} />
+                        <MiniMeta label="Pages" value={String(summary.extractedPages)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>
@@ -327,9 +446,9 @@ export function AiExtractionPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg bg-surface p-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -344,23 +463,23 @@ function SignalCard({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-center gap-3 text-slate-900">
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="flex items-center gap-3 text-foreground">
         {icon}
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-lg font-semibold text-slate-900">{value}</p>
+      <p className="mt-3 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }
 
 function MiniMeta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg bg-surface p-3">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

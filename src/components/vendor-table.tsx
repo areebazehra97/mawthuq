@@ -18,42 +18,42 @@ export function VendorTable({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="overflow-x-auto">
-        <table className="min-w-full text-left">
+        <table className="w-full min-w-[880px] text-left">
           <thead>
-            <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-slate-500">
-              <th className="pb-4 pr-4 font-semibold">Vendor</th>
-              <th className="pb-4 pr-4 font-semibold">Discipline</th>
-              <th className="pb-4 pr-4 font-semibold">Classification</th>
-              <th className="pb-4 pr-4 font-semibold">Score</th>
-              <th className="pb-4 pr-4 font-semibold">Issues</th>
-              <th className="pb-4 pr-4 font-semibold">Status</th>
+            <tr className="border-b border-border bg-surface text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <th className="pb-3 pr-4 pt-3 pl-1 font-semibold">Vendor</th>
+              <th className="pb-3 pr-4 font-semibold">Discipline</th>
+              <th className="pb-3 pr-4 font-semibold">Classification</th>
+              <th className="pb-3 pr-4 font-semibold">Score</th>
+              <th className="pb-3 pr-4 font-semibold">Issues</th>
+              <th className="pb-3 pr-4 font-semibold">Status</th>
             </tr>
           </thead>
           <tbody>
             {vendors.map((vendor) => (
               <tr
                 key={vendor.id}
-                className="border-b border-slate-100 last:border-b-0"
+                className="border-b border-border last:border-b-0 hover:bg-surface/60 transition-colors"
               >
-                <td className="py-5 pr-4">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-slate-900">{vendor.name}</p>
-                    <p className="text-sm text-slate-500">{vendor.arabicName}</p>
+                <td className="py-4 pr-4 pl-1">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-foreground">{vendor.name}</p>
+                    <p className="text-xs text-muted-foreground" dir="rtl">{vendor.arabicName}</p>
                   </div>
                 </td>
-                <td className="py-5 pr-4 text-sm text-slate-600">
+                <td className="py-4 pr-4 text-sm text-muted-foreground">
                   {vendor.primaryDiscipline}
                 </td>
-                <td className="py-5 pr-4 text-sm text-slate-600">
+                <td className="py-4 pr-4 text-sm text-muted-foreground">
                   {vendor.classification}
                 </td>
-                <td className="py-5 pr-4 text-sm font-semibold text-slate-900">
+                <td className="py-4 pr-4 text-sm font-semibold text-foreground tabular-nums">
                   {vendor.score}
                 </td>
-                <td className="py-5 pr-4 text-sm text-slate-600">
+                <td className="py-4 pr-4 text-sm text-muted-foreground">
                   {vendor.openIssues}
                 </td>
-                <td className="py-5 pr-4">
+                <td className="py-4 pr-4">
                   <StatusBadge status={vendor.status} />
                 </td>
               </tr>

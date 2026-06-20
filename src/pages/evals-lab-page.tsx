@@ -76,16 +76,16 @@ export function EvalsLabPage() {
               "Rules Engine Tests",
               "Edge Cases",
             ].map((item) => (
-              <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="font-medium text-slate-900">{item}</p>
+              <div key={item} className="rounded-lg border border-border bg-surface p-4">
+                <p className="font-medium text-foreground">{item}</p>
               </div>
             ))}
-            <div className="rounded-3xl border border-primary/30 bg-primary/10 p-5">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-5">
               <div className="flex items-start gap-3">
-                <TestTube2 className="mt-0.5 h-5 w-5 text-slate-900" />
+                <TestTube2 className="mt-0.5 h-5 w-5 text-foreground" />
                 <div>
-                  <p className="font-semibold text-slate-900">Evaluation principle</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                  <p className="font-semibold text-foreground">Evaluation principle</p>
+                  <p className="mt-2 text-sm leading-6 text-foreground">
                     Mawthūq should only be trusted when extraction quality, citation quality, and deterministic rule consistency are independently measurable.
                   </p>
                 </div>
@@ -109,22 +109,22 @@ export function EvalsLabPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-lg bg-surface p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Methodology
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                  <p className="mt-2 text-sm leading-6 text-foreground">
                     {evaluation.methodology}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 p-4">
+                <div className="rounded-lg border border-border p-4">
                   <div className="flex items-start gap-3">
                     {evaluation.status === "PASS" ? (
                       <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
                     ) : (
                       <ShieldAlert className="mt-0.5 h-5 w-5 text-rose-600" />
                     )}
-                    <p className="text-sm leading-6 text-slate-600">{evaluation.detail}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">{evaluation.detail}</p>
                   </div>
                 </div>
               </CardContent>

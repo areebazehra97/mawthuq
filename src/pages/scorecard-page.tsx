@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { usePackageConfig } from "@/hooks/use-package-config";
 import { useVendorDocuments } from "@/hooks/use-vendor-documents";
+import { useVendorExtractions } from "@/hooks/use-vendor-extractions";
 import { buildVendorScorecard } from "@/lib/scorecard";
 import type { RiskLevel, ScorecardFinding, VendorStatus } from "@/types";
 
@@ -22,6 +23,7 @@ export function ScorecardPage() {
   const { vendors } = useDemoVendors();
   const { documents } = useVendorDocuments();
   const { config } = usePackageConfig();
+  const { extractions } = useVendorExtractions();
   const [activeVendorId, setActiveVendorId] = useState<string>(vendors[0]?.id ?? "");
   const [riskFilter, setRiskFilter] = useState<"All Findings" | RiskLevel>("All Findings");
 
@@ -32,9 +34,10 @@ export function ScorecardPage() {
         vendor,
         documents.filter((document) => document.vendorId === vendor.id),
         config,
+        extractions.find((extraction) => extraction.vendorId === vendor.id)?.fields ?? [],
       ),
     }));
-  }, [vendors, documents, config]);
+  }, [vendors, documents, config, extractions]);
 
   const activeRecord =
     scorecards.find((record) => record.vendor.id === activeVendorId) ?? scorecards[0];
@@ -74,16 +77,16 @@ export function ScorecardPage() {
                 key={record.vendor.id}
                 type="button"
                 onClick={() => setActiveVendorId(record.vendor.id)}
-                className={`block w-full rounded-3xl border p-4 text-left transition ${
+                className={`block w-full rounded-xl border p-4 text-left transition ${
                   record.vendor.id === activeVendorId
                     ? "border-primary/40 bg-primary/10"
-                    : "border-slate-200 bg-white"
+                    : "border-border bg-white"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-slate-900">{record.vendor.name}</p>
-                    <p className="mt-1 text-sm text-slate-500">{record.vendor.classification}</p>
+                    <p className="font-semibold text-foreground">{record.vendor.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{record.vendor.classification}</p>
                   </div>
                   <StatusBadge status={record.scorecard.decision} />
                 </div>
@@ -104,7 +107,7 @@ export function ScorecardPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="space-y-3">
+                <div className="min-w-0 space-y-3">
                   <CardTitle>{vendor.name}</CardTitle>
                   <CardDescription>
                     Deterministic vendor qualification scorecard for {config.projectName}.
@@ -119,7 +122,7 @@ export function ScorecardPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 <SummaryCard label="Overall Score" value={String(scorecard.overallScore)} icon={<Scale className="h-5 w-5" />} />
                 <SummaryCard label="Decision" value={scorecard.decision} icon={<ShieldCheck className="h-5 w-5" />} />
                 <SummaryCard label="Risk Level" value={scorecard.riskLevel} icon={<TriangleAlert className="h-5 w-5" />} />
@@ -128,19 +131,70 @@ export function ScorecardPage() {
                 <SummaryCard label="Hard Gate Failures" value={String(scorecard.hardGateFailures)} icon={<ShieldX className="h-5 w-5" />} />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-5">
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
+                <p className="text-sm font-semibold text-foreground">Review completeness</p>
+                <p className="mt-2 text-sm leading-6 text-foreground">
+                  {scorecard.missingDocuments > 0
+                    ? "Evidence missing"
+                    : scorecard.findings.some((finding) => finding.result === "Review")
+                      ? "Reviewer action pending"
+                      : "Evidence complete"}
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {[
+                  {
+                    label: "CR Valid",
+                    finding: findHardGate(scorecard.findings, "Commercial Registration Validity"),
+                  },
+                  {
+                    label: "ZATCA Valid",
+                    finding: findHardGate(scorecard.findings, "ZATCA Certificate Validity"),
+                  },
+                  {
+                    label: "Financials Present",
+                    finding: findHardGate(
+                      scorecard.findings,
+                      "Audited Financial Statements Present",
+                    ),
+                  },
+                  {
+                    label: "Grade Sufficient",
+                    finding: findHardGate(
+                      scorecard.findings,
+                      "Contractor Classification Grade Threshold",
+                    ),
+                  },
+                  {
+                    label: "HSE Screen",
+                    finding: findHardGate(scorecard.findings, "Severe HSE Issue Screen"),
+                  },
+                ].map(({ label, finding }) => (
+                  <div key={label} className="rounded-xl border border-border bg-surface p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-3 text-sm font-semibold text-foreground">
+                      {finding?.result ?? "Not evaluated"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 {scorecard.dimensions.map((dimension) => (
                   <div
                     key={dimension.dimension}
-                    className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
+                    className="rounded-xl border border-border bg-surface p-4"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                       {dimension.dimension}
                     </p>
-                    <p className="mt-3 text-2xl font-semibold text-slate-900">
+                    <p className="mt-3 text-2xl font-semibold text-foreground">
                       {dimension.score}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Weight {dimension.weight}%
                     </p>
                   </div>
@@ -174,6 +228,9 @@ export function ScorecardPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="rounded-lg border border-border bg-surface p-4 text-sm leading-6 text-muted-foreground">
+                Confidence scores influence review priority and escalation, not final decision thresholds or hard-gate outcomes.
+              </div>
               {filteredFindings.map((finding) => (
                 <FindingCard key={finding.id} finding={finding} />
               ))}
@@ -187,9 +244,9 @@ export function ScorecardPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg bg-surface p-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -204,14 +261,14 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-center gap-3 text-slate-900">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center gap-3 text-foreground">
         {icon}
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-lg font-semibold text-slate-900">{value}</p>
+      <p className="mt-3 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -225,7 +282,7 @@ function LargeDecisionBadge({ decision }: { decision: VendorStatus }) {
         : "bg-rose-100 text-rose-800";
 
   return (
-    <div className={`rounded-[28px] px-8 py-6 text-center ${styles}`}>
+    <div className={`w-full rounded-[28px] px-6 py-5 text-center lg:w-auto ${styles}`}>
       <p className="text-xs font-semibold uppercase tracking-[0.24em]">Decision</p>
       <p className="mt-2 text-3xl font-semibold">{decision}</p>
     </div>
@@ -234,22 +291,22 @@ function LargeDecisionBadge({ decision }: { decision: VendorStatus }) {
 
 function FindingCard({ finding }: { finding: ScorecardFinding }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border border-border bg-white p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-lg font-semibold text-slate-900">{finding.ruleName}</p>
+            <p className="text-lg font-semibold text-foreground">{finding.ruleName}</p>
             <Badge variant="neutral">{finding.dimension}</Badge>
             {finding.hardGate ? <Badge variant="danger">Hard Gate</Badge> : null}
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{finding.explanation}</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{finding.explanation}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ResultBadge result={finding.result} />
           <RiskBadge riskLevel={finding.riskLevel} />
         </div>
       </div>
-      <div className="mt-5 grid gap-4 xl:grid-cols-4">
+      <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <DetailBlock label="Input Value" value={finding.inputValue} />
         <DetailBlock label="Result" value={finding.result} />
         <DetailBlock label="Source Citation" value={finding.sourceCitation} />
@@ -261,9 +318,9 @@ function FindingCard({ finding }: { finding: ScorecardFinding }) {
 
 function DetailBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg bg-surface p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
@@ -278,4 +335,8 @@ function RiskBadge({ riskLevel }: { riskLevel: RiskLevel }) {
   const variant =
     riskLevel === "Low" ? "success" : riskLevel === "Medium" ? "warning" : "danger";
   return <Badge variant={variant}>{riskLevel} Risk</Badge>;
+}
+
+function findHardGate(findings: ScorecardFinding[], ruleName: string) {
+  return findings.find((finding) => finding.ruleName === ruleName);
 }

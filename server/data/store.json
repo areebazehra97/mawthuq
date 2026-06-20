@@ -1,0 +1,964 @@
+{
+  "vendors": [
+    {
+      "id": "vendor-001",
+      "name": "Al Bina Al Saudi Contracting",
+      "arabicName": "البناء السعودي للمقاولات",
+      "city": "Riyadh",
+      "classification": "Class I Building & Civil Works",
+      "primaryDiscipline": "General Contracting",
+      "status": "PASS",
+      "reviewStage": "Approved",
+      "packageHealth": "Fully evidenced",
+      "score": 92,
+      "documentsSubmitted": 24,
+      "openIssues": 1,
+      "expiryRisk": "Low",
+      "submittedAt": "12 Jun 2026",
+      "summary": "Strong commercial standing, current certificates, and well-supported project references suitable for immediate tender invitation.",
+      "metrics": [
+        {
+          "label": "Commercial Registration",
+          "value": "Valid until Mar 2027",
+          "tone": "success"
+        },
+        {
+          "label": "Saudization",
+          "value": "Above target band",
+          "tone": "success"
+        },
+        {
+          "label": "Revenue Capacity",
+          "value": "SAR 1.4B trailing",
+          "tone": "success"
+        },
+        {
+          "label": "HSE Record",
+          "value": "1 observation",
+          "tone": "neutral"
+        }
+      ],
+      "reviewItems": [
+        {
+          "label": "ZATCA Certificate",
+          "state": "Complete",
+          "evidence": "Certificate dated 28 May 2026"
+        },
+        {
+          "label": "Classification Verification",
+          "state": "Complete",
+          "evidence": "Municipal portal extract attached"
+        },
+        {
+          "label": "Local Content Evidence",
+          "state": "Pending",
+          "evidence": "Narrative uploaded; final reviewer note pending"
+        }
+      ],
+      "timeline": [
+        {
+          "title": "Package submitted",
+          "detail": "24 files uploaded by vendor portal",
+          "when": "12 Jun 2026"
+        },
+        {
+          "title": "Finance review cleared",
+          "detail": "Liquidity and backlog within threshold",
+          "when": "13 Jun 2026"
+        },
+        {
+          "title": "Manager approved",
+          "detail": "Passed to approved vendor list",
+          "when": "15 Jun 2026"
+        }
+      ],
+      "workCategory": "General Contracting"
+    },
+    {
+      "id": "vendor-002",
+      "name": "Najd MEP Contractors",
+      "arabicName": "مقاولو نجد للأعمال الميكانيكية والكهربائية",
+      "city": "Dammam",
+      "classification": "Class II Electro-Mechanical",
+      "primaryDiscipline": "MEP",
+      "status": "CONDITIONAL",
+      "reviewStage": "In Review",
+      "packageHealth": "Material gaps tracked",
+      "score": 74,
+      "documentsSubmitted": 19,
+      "openIssues": 4,
+      "expiryRisk": "Medium",
+      "submittedAt": "10 Jun 2026",
+      "summary": "Technically capable but awaiting clarification on expiring ISO coverage and one incomplete reference package before release to tender.",
+      "metrics": [
+        {
+          "label": "Commercial Registration",
+          "value": "Valid until Nov 2026",
+          "tone": "success"
+        },
+        {
+          "label": "Saudization",
+          "value": "Borderline target band",
+          "tone": "warning"
+        },
+        {
+          "label": "Revenue Capacity",
+          "value": "SAR 420M trailing",
+          "tone": "neutral"
+        },
+        {
+          "label": "ISO 45001",
+          "value": "Expires in 42 days",
+          "tone": "warning"
+        }
+      ],
+      "reviewItems": [
+        {
+          "label": "Financial Statements",
+          "state": "Complete",
+          "evidence": "FY2025 audited statements uploaded"
+        },
+        {
+          "label": "Project Reference No. 3",
+          "state": "Flagged",
+          "evidence": "Completion certificate missing signature page"
+        },
+        {
+          "label": "ISO Renewal",
+          "state": "Pending",
+          "evidence": "Renewal letter uploaded without final certificate"
+        }
+      ],
+      "timeline": [
+        {
+          "title": "Package submitted",
+          "detail": "19 files uploaded by vendor coordinator",
+          "when": "10 Jun 2026"
+        },
+        {
+          "title": "AI extraction completed",
+          "detail": "2 low-confidence fields routed to analyst",
+          "when": "11 Jun 2026"
+        },
+        {
+          "title": "Conditional recommendation",
+          "detail": "Awaiting management exception decision",
+          "when": "15 Jun 2026"
+        }
+      ],
+      "workCategory": "MEP"
+    },
+    {
+      "id": "vendor-003",
+      "name": "Red Sands Trading & Contracting",
+      "arabicName": "الرمال الحمراء للتجارة والمقاولات",
+      "city": "Jeddah",
+      "classification": "Class III Mixed Services",
+      "primaryDiscipline": "Civil & Trading",
+      "status": "FAIL",
+      "reviewStage": "Rejected",
+      "packageHealth": "Critical evidence missing",
+      "score": 48,
+      "documentsSubmitted": 13,
+      "openIssues": 7,
+      "expiryRisk": "High",
+      "submittedAt": "08 Jun 2026",
+      "summary": "Key regulatory and financial evidence is either missing or expired, creating an unacceptably weak basis for tender invitation.",
+      "metrics": [
+        {
+          "label": "Commercial Registration",
+          "value": "Expired in Apr 2026",
+          "tone": "danger"
+        },
+        {
+          "label": "Saudization",
+          "value": "Below target band",
+          "tone": "danger"
+        },
+        {
+          "label": "Revenue Capacity",
+          "value": "Incomplete statements",
+          "tone": "warning"
+        },
+        {
+          "label": "HSE Record",
+          "value": "3 incidents disclosed",
+          "tone": "danger"
+        }
+      ],
+      "reviewItems": [
+        {
+          "label": "ZATCA Certificate",
+          "state": "Missing",
+          "evidence": "No valid certificate found in package"
+        },
+        {
+          "label": "Financial Statements",
+          "state": "Flagged",
+          "evidence": "Unsigned management accounts only"
+        },
+        {
+          "label": "Project References",
+          "state": "Missing",
+          "evidence": "No owner letters or completion records attached"
+        }
+      ],
+      "timeline": [
+        {
+          "title": "Package submitted",
+          "detail": "13 files uploaded via email intake",
+          "when": "08 Jun 2026"
+        },
+        {
+          "title": "Compliance gap detected",
+          "detail": "Regulatory expiry cluster triggered analyst review",
+          "when": "09 Jun 2026"
+        },
+        {
+          "title": "Rejected",
+          "detail": "Manager declined release to tender pool",
+          "when": "14 Jun 2026"
+        }
+      ],
+      "workCategory": "Civil & Trading"
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-001",
+      "vendorId": "vendor-001",
+      "name": "ABS_Commercial_Registration_2026.pdf",
+      "documentType": "Commercial Registration",
+      "uploadDate": "12 Jun 2026",
+      "language": "Arabic",
+      "expiryDate": "15 Mar 2027",
+      "status": "Valid",
+      "confidenceScore": 98,
+      "sizeLabel": "2.1 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-002",
+      "vendorId": "vendor-001",
+      "name": "ABS_Classification_Class_I.pdf",
+      "documentType": "Contractor Classification",
+      "uploadDate": "12 Jun 2026",
+      "language": "Arabic",
+      "expiryDate": "31 Dec 2026",
+      "status": "Valid",
+      "confidenceScore": 96,
+      "sizeLabel": "1.4 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-003",
+      "vendorId": "vendor-001",
+      "name": "ABS_ZATCA_Certificate.pdf",
+      "documentType": "ZATCA Certificate",
+      "uploadDate": "12 Jun 2026",
+      "language": "Bilingual",
+      "expiryDate": "28 May 2027",
+      "status": "Valid",
+      "confidenceScore": 97,
+      "sizeLabel": "860 KB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-004",
+      "vendorId": "vendor-001",
+      "name": "ABS_Audited_Financials_FY2025.pdf",
+      "documentType": "Audited Financial Statements",
+      "uploadDate": "12 Jun 2026",
+      "language": "English",
+      "expiryDate": "31 Dec 2026",
+      "status": "Valid",
+      "confidenceScore": 95,
+      "sizeLabel": "4.6 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-005",
+      "vendorId": "vendor-001",
+      "name": "ABS_ISO_Certificates.pdf",
+      "documentType": "ISO Certificates",
+      "uploadDate": "12 Jun 2026",
+      "language": "English",
+      "expiryDate": "30 Jan 2027",
+      "status": "Valid",
+      "confidenceScore": 94,
+      "sizeLabel": "1.8 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-006",
+      "vendorId": "vendor-001",
+      "name": "ABS_Local_Content_Statement.pdf",
+      "documentType": "Local Content Documents",
+      "uploadDate": "12 Jun 2026",
+      "language": "Bilingual",
+      "expiryDate": "N/A",
+      "status": "Ambiguous",
+      "confidenceScore": 78,
+      "sizeLabel": "1.1 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-101",
+      "vendorId": "vendor-002",
+      "name": "Najd_CR_2026.pdf",
+      "documentType": "Commercial Registration",
+      "uploadDate": "10 Jun 2026",
+      "language": "Arabic",
+      "expiryDate": "18 Nov 2026",
+      "status": "Valid",
+      "confidenceScore": 96,
+      "sizeLabel": "1.9 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-102",
+      "vendorId": "vendor-002",
+      "name": "Najd_ZATCA.pdf",
+      "documentType": "ZATCA Certificate",
+      "uploadDate": "10 Jun 2026",
+      "language": "Bilingual",
+      "expiryDate": "20 Oct 2026",
+      "status": "Valid",
+      "confidenceScore": 92,
+      "sizeLabel": "770 KB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-103",
+      "vendorId": "vendor-002",
+      "name": "Najd_ISO_45001_Renewal_Letter.pdf",
+      "documentType": "ISO Certificates",
+      "uploadDate": "10 Jun 2026",
+      "language": "English",
+      "expiryDate": "28 Jul 2026",
+      "status": "Ambiguous",
+      "confidenceScore": 71,
+      "sizeLabel": "910 KB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-104",
+      "vendorId": "vendor-002",
+      "name": "Najd_HSE_2025.pdf",
+      "documentType": "HSE Reports",
+      "uploadDate": "10 Jun 2026",
+      "language": "English",
+      "expiryDate": "31 Dec 2026",
+      "status": "Valid",
+      "confidenceScore": 89,
+      "sizeLabel": "1.3 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-105",
+      "vendorId": "vendor-002",
+      "name": "Najd_Project_References.pdf",
+      "documentType": "Project References",
+      "uploadDate": "10 Jun 2026",
+      "language": "English",
+      "expiryDate": "N/A",
+      "status": "Ambiguous",
+      "confidenceScore": 74,
+      "sizeLabel": "2.7 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-106",
+      "vendorId": "vendor-002",
+      "name": "Najd_Saudization_Evidence.pdf",
+      "documentType": "Saudization Evidence",
+      "uploadDate": "10 Jun 2026",
+      "language": "Arabic",
+      "expiryDate": "30 Sep 2026",
+      "status": "Valid",
+      "confidenceScore": 88,
+      "sizeLabel": "640 KB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-201",
+      "vendorId": "vendor-003",
+      "name": "RedSands_CR_Expired.pdf",
+      "documentType": "Commercial Registration",
+      "uploadDate": "08 Jun 2026",
+      "language": "Arabic",
+      "expiryDate": "10 Apr 2026",
+      "status": "Expired",
+      "confidenceScore": 95,
+      "sizeLabel": "1.2 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-202",
+      "vendorId": "vendor-003",
+      "name": "RedSands_Financials_Draft.pdf",
+      "documentType": "Audited Financial Statements",
+      "uploadDate": "08 Jun 2026",
+      "language": "English",
+      "expiryDate": "31 Dec 2025",
+      "status": "Ambiguous",
+      "confidenceScore": 63,
+      "sizeLabel": "3.9 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-203",
+      "vendorId": "vendor-003",
+      "name": "RedSands_HSE_Incidents.pdf",
+      "documentType": "HSE Reports",
+      "uploadDate": "08 Jun 2026",
+      "language": "English",
+      "expiryDate": "31 Dec 2026",
+      "status": "Expired",
+      "confidenceScore": 81,
+      "sizeLabel": "1.6 MB",
+      "source": "Demo Pack"
+    },
+    {
+      "id": "doc-204",
+      "vendorId": "vendor-003",
+      "name": "RedSands_Local_Content_Note.pdf",
+      "documentType": "Local Content Documents",
+      "uploadDate": "08 Jun 2026",
+      "language": "Bilingual",
+      "expiryDate": "N/A",
+      "status": "Missing",
+      "confidenceScore": 45,
+      "sizeLabel": "220 KB",
+      "source": "Demo Pack"
+    }
+  ],
+  "extractions": [
+    {
+      "vendorId": "vendor-001",
+      "fields": [
+        {
+          "label": "Legal Company Name",
+          "value": "Al Bina Al Saudi Contracting",
+          "confidence": 99,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Al Bina Al Saudi Contracting Co. listed as the registered legal entity.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Number",
+          "value": "1010123456",
+          "confidence": 98,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Commercial Registration No. 1010123456 appears in the registration header.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Expiry",
+          "value": "15 Mar 2027",
+          "confidence": 97,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Registration validity shown through 15/03/2027.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Contractor Classification Grade",
+          "value": "Class I",
+          "confidence": 96,
+          "sourceDocument": "Classification Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Contractor classified under Grade I Building and Civil Works.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Nitaqat Category",
+          "value": "Green - High",
+          "confidence": 88,
+          "sourceDocument": "Saudization Evidence",
+          "pageNumber": 3,
+          "evidenceSnippet": "Entity falls within the Green High compliance band.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ZATCA Validity",
+          "value": "Valid until 28 May 2027",
+          "confidence": 97,
+          "sourceDocument": "ZATCA Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Tax and customs certificate remains valid to 28/05/2027.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Revenue",
+          "value": "SAR 1.4B",
+          "confidence": 95,
+          "sourceDocument": "Audited Financial Statements",
+          "pageNumber": 14,
+          "evidenceSnippet": "Total annual revenue reported at SAR 1,402,000,000.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Current Ratio",
+          "value": "1.82",
+          "confidence": 92,
+          "sourceDocument": "Audited Financial Statements",
+          "pageNumber": 18,
+          "evidenceSnippet": "Current assets divided by current liabilities equals 1.82.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 9001",
+          "value": "Certified",
+          "confidence": 94,
+          "sourceDocument": "ISO Certificates",
+          "pageNumber": 2,
+          "evidenceSnippet": "ISO 9001:2015 certificate active and issued to the contractor.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 14001",
+          "value": "Certified",
+          "confidence": 91,
+          "sourceDocument": "ISO Certificates",
+          "pageNumber": 4,
+          "evidenceSnippet": "ISO 14001 environmental management certificate is current.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 45001",
+          "value": "Certified",
+          "confidence": 94,
+          "sourceDocument": "ISO Certificates",
+          "pageNumber": 6,
+          "evidenceSnippet": "ISO 45001 occupational health and safety certificate is valid.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "HSE Record",
+          "value": "1 minor observation, no LTIs",
+          "confidence": 86,
+          "sourceDocument": "HSE Reports",
+          "pageNumber": 5,
+          "evidenceSnippet": "The annual HSE summary notes one observation and zero lost-time incidents.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Relevant Projects",
+          "value": "7 matched projects",
+          "confidence": 89,
+          "sourceDocument": "Project References",
+          "pageNumber": 9,
+          "evidenceSnippet": "Seven completed projects exceed the required scale and scope band.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Local Content Status",
+          "value": "Documented and pending final reviewer confirmation",
+          "confidence": 78,
+          "sourceDocument": "Local Content Statement",
+          "pageNumber": 3,
+          "evidenceSnippet": "Local content declaration submitted with supplier narrative and schedule.",
+          "sourceMode": "seeded"
+        }
+      ],
+      "sourceMode": "seeded",
+      "extractionStatus": "complete",
+      "lastRunAt": null,
+      "warning": "Seeded demo evidence loaded.",
+      "qualityStatus": "Fallback used",
+      "promptVersion": "seeded-demo-v1",
+      "completedAt": null,
+      "supportedLiveDocumentTypes": [
+        "Commercial Registration",
+        "Contractor Classification",
+        "ZATCA Certificate",
+        "Audited Financial Statements",
+        "ISO Certificates",
+        "Project References"
+      ]
+    },
+    {
+      "vendorId": "vendor-002",
+      "fields": [
+        {
+          "label": "Legal Company Name",
+          "value": "Najd MEP Contractors",
+          "confidence": 98,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Najd MEP Contractors shown as the registered trading name.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Number",
+          "value": "2051148723",
+          "confidence": 97,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Commercial Registration No. 2051148723 visible in the certificate body.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Expiry",
+          "value": "18 Nov 2026",
+          "confidence": 96,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Registration remains valid through 18/11/2026.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Contractor Classification Grade",
+          "value": "Class II",
+          "confidence": 94,
+          "sourceDocument": "Classification Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Electro-mechanical contractor classification listed as Grade II.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Nitaqat Category",
+          "value": "Green",
+          "confidence": 84,
+          "sourceDocument": "Saudization Evidence",
+          "pageNumber": 2,
+          "evidenceSnippet": "Saudization report indicates the entity is in the Green range.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ZATCA Validity",
+          "value": "Valid until 20 Oct 2026",
+          "confidence": 93,
+          "sourceDocument": "ZATCA Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "ZATCA compliance certificate expires on 20/10/2026.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Revenue",
+          "value": "SAR 420M",
+          "confidence": 90,
+          "sourceDocument": "Audited Financial Statements",
+          "pageNumber": 12,
+          "evidenceSnippet": "Revenue for the audited period totals SAR 420,000,000.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Current Ratio",
+          "value": "1.19",
+          "confidence": 88,
+          "sourceDocument": "Audited Financial Statements",
+          "pageNumber": 17,
+          "evidenceSnippet": "Current ratio calculated from the balance sheet note is 1.19.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 9001",
+          "value": "Certified",
+          "confidence": 89,
+          "sourceDocument": "ISO Certificates",
+          "pageNumber": 2,
+          "evidenceSnippet": "Quality management certificate remains active.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 14001",
+          "value": "Certified",
+          "confidence": 86,
+          "sourceDocument": "ISO Certificates",
+          "pageNumber": 4,
+          "evidenceSnippet": "Environmental certificate is current at time of review.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 45001",
+          "value": "Renewal in progress",
+          "confidence": 71,
+          "sourceDocument": "ISO Renewal Letter",
+          "pageNumber": 1,
+          "evidenceSnippet": "Renewal letter references the 45001 recertification still under issuance.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "HSE Record",
+          "value": "2 recordables, no fatalities",
+          "confidence": 83,
+          "sourceDocument": "HSE Reports",
+          "pageNumber": 7,
+          "evidenceSnippet": "HSE record summary lists two recordable incidents and no fatalities.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Relevant Projects",
+          "value": "4 matched projects, 1 incomplete reference",
+          "confidence": 76,
+          "sourceDocument": "Project References",
+          "pageNumber": 11,
+          "evidenceSnippet": "Four projects align to MEP scope; one reference package lacks final owner sign-off.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Local Content Status",
+          "value": "Partially evidenced",
+          "confidence": 74,
+          "sourceDocument": "Local Content Submission",
+          "pageNumber": 2,
+          "evidenceSnippet": "Local content narrative submitted with limited supporting schedules.",
+          "sourceMode": "seeded"
+        }
+      ],
+      "sourceMode": "seeded",
+      "extractionStatus": "complete",
+      "lastRunAt": null,
+      "warning": "Seeded demo evidence loaded.",
+      "qualityStatus": "Fallback used",
+      "promptVersion": "seeded-demo-v1",
+      "completedAt": null,
+      "supportedLiveDocumentTypes": [
+        "Commercial Registration",
+        "Contractor Classification",
+        "ZATCA Certificate",
+        "Audited Financial Statements",
+        "ISO Certificates",
+        "Project References"
+      ]
+    },
+    {
+      "vendorId": "vendor-003",
+      "fields": [
+        {
+          "label": "Legal Company Name",
+          "value": "Red Sands Trading & Contracting",
+          "confidence": 97,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Red Sands Trading & Contracting appears as the legal company name.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Number",
+          "value": "4032237810",
+          "confidence": 96,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Commercial Registration No. 4032237810 displayed on page 2.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "CR Expiry",
+          "value": "10 Apr 2026",
+          "confidence": 97,
+          "sourceDocument": "CR Certificate",
+          "pageNumber": 2,
+          "evidenceSnippet": "Registration validity expired on 10/04/2026.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Contractor Classification Grade",
+          "value": "Class III",
+          "confidence": 90,
+          "sourceDocument": "Classification Certificate",
+          "pageNumber": 1,
+          "evidenceSnippet": "Mixed services contractor classification shown as Grade III.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Nitaqat Category",
+          "value": "Yellow",
+          "confidence": 76,
+          "sourceDocument": "Saudization Evidence",
+          "pageNumber": 2,
+          "evidenceSnippet": "Saudization printout places the entity in the Yellow band.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ZATCA Validity",
+          "value": "No valid certificate found",
+          "confidence": 68,
+          "sourceDocument": "Tax Compliance Correspondence",
+          "pageNumber": 1,
+          "evidenceSnippet": "Submitted correspondence references renewal but no active certificate number is shown.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Revenue",
+          "value": "Management accounts only",
+          "confidence": 64,
+          "sourceDocument": "Financial Statements Draft",
+          "pageNumber": 6,
+          "evidenceSnippet": "Draft management accounts included without signed audit opinion.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Current Ratio",
+          "value": "0.91",
+          "confidence": 61,
+          "sourceDocument": "Financial Statements Draft",
+          "pageNumber": 10,
+          "evidenceSnippet": "Working capital note implies a current ratio below 1.0.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 9001",
+          "value": "Not evidenced",
+          "confidence": 58,
+          "sourceDocument": "Quality Certificate Index",
+          "pageNumber": 1,
+          "evidenceSnippet": "Index page references a certificate, but the active certificate copy is absent.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 14001",
+          "value": "Not evidenced",
+          "confidence": 57,
+          "sourceDocument": "Quality Certificate Index",
+          "pageNumber": 1,
+          "evidenceSnippet": "No complete ISO 14001 certificate pages were included in the pack.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "ISO 45001",
+          "value": "Not evidenced",
+          "confidence": 57,
+          "sourceDocument": "Quality Certificate Index",
+          "pageNumber": 1,
+          "evidenceSnippet": "The submission does not contain a full ISO 45001 certificate.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "HSE Record",
+          "value": "3 incidents disclosed",
+          "confidence": 84,
+          "sourceDocument": "HSE Incident Report",
+          "pageNumber": 4,
+          "evidenceSnippet": "The report records three incidents during the previous review year.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Relevant Projects",
+          "value": "2 weakly matched projects",
+          "confidence": 66,
+          "sourceDocument": "Project Reference Summary",
+          "pageNumber": 3,
+          "evidenceSnippet": "Only two projects are listed and neither includes final owner confirmation.",
+          "sourceMode": "seeded"
+        },
+        {
+          "label": "Local Content Status",
+          "value": "Insufficient evidence",
+          "confidence": 62,
+          "sourceDocument": "Local Content Note",
+          "pageNumber": 1,
+          "evidenceSnippet": "A brief local content note is included without measurable supporting schedules.",
+          "sourceMode": "seeded"
+        }
+      ],
+      "sourceMode": "seeded",
+      "extractionStatus": "complete",
+      "lastRunAt": null,
+      "warning": "Seeded demo evidence loaded.",
+      "qualityStatus": "Fallback used",
+      "promptVersion": "seeded-demo-v1",
+      "completedAt": null,
+      "supportedLiveDocumentTypes": [
+        "Commercial Registration",
+        "Contractor Classification",
+        "ZATCA Certificate",
+        "Audited Financial Statements",
+        "ISO Certificates",
+        "Project References"
+      ]
+    }
+  ],
+  "auditRecords": [
+    {
+      "id": "audit-001",
+      "vendorId": "vendor-001",
+      "timestamp": "16 Jun 2026, 09:22",
+      "actor": "System",
+      "title": "AI extracted Contractor Grade.",
+      "detail": "Classification Certificate cited on p.1 for Grade I determination."
+    },
+    {
+      "id": "audit-002",
+      "vendorId": "vendor-002",
+      "timestamp": "16 Jun 2026, 10:42",
+      "actor": "System",
+      "title": "Rules engine flagged expiring ISO 45001.",
+      "detail": "Renewal letter produced a review state for certification continuity."
+    },
+    {
+      "id": "audit-003",
+      "vendorId": "vendor-003",
+      "timestamp": "16 Jun 2026, 11:05",
+      "actor": "System",
+      "title": "Rules engine flagged expired ZATCA.",
+      "detail": "Tender release gate failed due to missing active ZATCA certificate evidence."
+    },
+    {
+      "id": "audit-004",
+      "vendorId": "vendor-001",
+      "timestamp": "16 Jun 2026, 12:14",
+      "actor": "Finance Reviewer",
+      "title": "Finance reviewer accepted revenue value.",
+      "detail": "SAR 1.4B revenue confirmed against audited statements on p.14."
+    },
+    {
+      "id": "audit-005",
+      "vendorId": "vendor-002",
+      "timestamp": "16 Jun 2026, 13:25",
+      "actor": "Procurement Manager",
+      "title": "Procurement Manager changed decision from Conditional to Pass.",
+      "detail": "Manager override recorded pending final ISO issuance evidence."
+    },
+    {
+      "id": "audit-006",
+      "vendorId": "vendor-001",
+      "timestamp": "16 Jun 2026, 14:10",
+      "actor": "System",
+      "title": "Vendor added to Approved Vendor List.",
+      "detail": "Vendor record transferred to tender-ready downstream list."
+    }
+  ],
+  "fieldReviewStates": [],
+  "ruleReviewStates": [],
+  "packageConfig": {
+    "packageName": "Main Works Prequalification Package",
+    "projectName": "North Riyadh Integrated Development",
+    "workCategory": "Building & Civil Works",
+    "packageValueBand": "SAR 250M - SAR 1B",
+    "requiredDocuments": [
+      "Commercial Registration",
+      "Contractor Classification",
+      "ZATCA Certificate",
+      "Saudization Evidence",
+      "Audited Financial Statements",
+      "ISO 9001 / ISO 45001",
+      "HSE Incident Record",
+      "Project References",
+      "Local Content Evidence"
+    ],
+    "hardGateRules": [
+      "Commercial Registration must be valid on review date",
+      "ZATCA certificate is mandatory for tender release",
+      "At least 3 relevant project references must be evidenced",
+      "Any expired core certification triggers manual exception review"
+    ],
+    "scoringWeights": {
+      "compliance": 70,
+      "financial": 25,
+      "technical": 20,
+      "hse": 10,
+      "localization": 10
+    },
+    "decisionThresholds": {
+      "pass": 80,
+      "conditionalMin": 60,
+      "conditionalMax": 79
+    }
+  },
+  "reports": {}
+}

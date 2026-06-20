@@ -95,24 +95,24 @@ export function ResearchPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">Executive use</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+            <div className="rounded-lg bg-surface p-4">
+              <p className="font-semibold text-foreground">Executive use</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Demonstrates that Mawthūq is grounded in procurement reality, ecosystem positioning, and Saudi-specific governance requirements.
               </p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">Product use</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+            <div className="rounded-lg bg-surface p-4">
+              <p className="font-semibold text-foreground">Product use</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Helps prioritize what should become configurable rules, evidence requirements, workflow states, or downstream integrations.
               </p>
             </div>
-            <div className="rounded-3xl border border-primary/30 bg-primary/10 p-5">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-5">
               <div className="flex items-start gap-3">
-                <Landmark className="mt-0.5 h-5 w-5 text-slate-900" />
+                <Landmark className="mt-0.5 h-5 w-5 text-foreground" />
                 <div>
-                  <p className="font-semibold text-slate-900">Strategic takeaway</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                  <p className="font-semibold text-foreground">Strategic takeaway</p>
+                  <p className="mt-2 text-sm leading-6 text-foreground">
                     Mawthūq’s differentiation comes from combining explainable AI with Saudi-native procurement logic, not from being a generic vendor portal.
                   </p>
                 </div>
@@ -134,22 +134,22 @@ export function ResearchPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-lg bg-surface p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Why It Matters
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                  <p className="mt-2 text-sm leading-6 text-foreground">
                     {source.whyItMatters}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 p-4">
+                <div className="rounded-lg border border-border p-4">
                   <div className="flex items-start gap-3">
                     <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Product Implication
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-700">
+                      <p className="mt-2 text-sm leading-6 text-foreground">
                         {source.productImplication}
                       </p>
                     </div>

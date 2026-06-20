@@ -33,6 +33,8 @@ export interface VendorRecord {
   city: string;
   classification: string;
   primaryDiscipline: string;
+  workCategory?: string;
+  projectId?: string;
   status: VendorStatus;
   reviewStage: ReviewStage;
   packageHealth: string;
@@ -51,6 +53,43 @@ export interface NavigationItem {
   label: string;
   path: string;
   description: string;
+}
+
+export type ProjectStatus = "Active" | "Planning" | "Tendering" | "Closed";
+
+export interface ProjectCategory {
+  name: string;
+  subCategories: string[];
+  requiredDocuments: string[];
+}
+
+export interface ProjectConfig {
+  categories: ProjectCategory[];
+  scoringWeights: ScoringWeights;
+  decisionThresholds: DecisionThresholds;
+  hardGateRules: string[];
+  expiryReminderDays?: number[];
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  arabicName: string;
+  location: string;
+  packageName: string;
+  workCategory: string;
+  packageValueBand: string;
+  status: ProjectStatus;
+  categories: string[];
+  submittedCount: number;
+  totalInvited: number;
+  scope?: string;
+  timeline?: string;
+  registrationDeadline?: string;
+  reviewers?: ReviewerRole[];
+  requiredExperience?: string[];
+  requiredCertifications?: string[];
+  config?: ProjectConfig;
 }
 
 export interface ScoringWeights {
@@ -95,13 +134,29 @@ export interface VendorDocument {
   vendorId: string;
   name: string;
   documentType: string;
+  classifiedDocumentType?: string;
   uploadDate: string;
+  issueDate?: string;
+  issuingAuthority?: string;
   language: DocumentLanguage;
   expiryDate: string;
   status: DocumentStatus;
+  reviewerComments?: string;
   confidenceScore: number;
   sizeLabel: string;
   source: "Demo Pack" | "Manual Upload";
+  version: number;
+  isCurrentVersion: boolean;
+  supersedes?: string;
+  supersededBy?: string;
+  mimeType?: string;
+  contentPreview?: string;
+  uploadedBy?: string;
+  storagePath?: string;
+  storageProvider?: "local" | "supabase";
+  documentHash?: string;
+  supportLevel?: "live" | "demo_supported" | "unsupported";
+  lastProcessedAt?: string | null;
 }
 
 export interface ExtractedField {
@@ -111,6 +166,62 @@ export interface ExtractedField {
   sourceDocument: string;
   pageNumber: number;
   evidenceSnippet: string;
+  sourceMode?: "live" | "seeded" | "demo_supported";
+}
+
+export type ExtractionSourceMode = "live" | "seeded" | "demo_supported";
+
+export type ExtractionStatus =
+  | "not_started"
+  | "queued"
+  | "classifying"
+  | "extracting"
+  | "validating"
+  | "running"
+  | "complete"
+  | "failed";
+
+export type ExtractionQualityStatus =
+  | "Evidence complete"
+  | "Partial evidence"
+  | "Fallback used"
+  | "Reviewer action required";
+
+export interface ExtractionDocumentDebug {
+  documentId: string;
+  documentName: string;
+  documentType: string;
+  classifiedDocumentType: string;
+  supportLevel: "live" | "demo_supported" | "unsupported";
+  textSource: "pdf" | "text" | "preview" | "none";
+  extractedPages: number;
+  usedFallback: boolean;
+}
+
+export interface ExtractionDebugInfo {
+  modelName?: string;
+  promptVersion?: string;
+  fallbackReason?: string | null;
+  errorMessage?: string | null;
+  cacheHit?: boolean;
+  documentSummaries: ExtractionDocumentDebug[];
+}
+
+export interface VendorExtraction {
+  vendorId: string;
+  fields: ExtractedField[];
+  sourceMode: ExtractionSourceMode;
+  extractionStatus: ExtractionStatus;
+  lastRunAt: string | null;
+  warning?: string;
+  supportedLiveDocumentTypes: string[];
+  qualityStatus?: ExtractionQualityStatus;
+  modelName?: string;
+  promptVersion?: string;
+  documentHash?: string;
+  fallbackReason?: string | null;
+  completedAt?: string | null;
+  debug?: ExtractionDebugInfo;
 }
 
 export type RiskLevel = "High" | "Medium" | "Low";
@@ -143,8 +254,36 @@ export interface VendorScorecard {
   missingDocuments: number;
   expiredDocuments: number;
   hardGateFailures: number;
+  criticalDocExpired: boolean;
   dimensions: ScorecardDimensionScore[];
   findings: ScorecardFinding[];
+}
+
+export type InvitationStatus =
+  | "invited"
+  | "opened"
+  | "started"
+  | "submitted"
+  | "expired"
+  | "bounced"
+  | "declined";
+
+export interface VendorInvitation {
+  id: string;
+  token: string;
+  companyName: string;
+  contactPerson: string;
+  email: string;
+  tradeCategory: string;
+  projectContext?: string;
+  status: InvitationStatus;
+  invitedAt: string;
+  expiresAt: string;
+  openedAt?: string;
+  startedAt?: string;
+  submittedAt?: string;
+  invitedBy: string;
+  registrationLink: string;
 }
 
 export type ReviewerRole =
@@ -182,4 +321,24 @@ export interface AuditRecord {
   actor: ReviewerRole | "System";
   title: string;
   detail: string;
+}
+
+export interface ReportPreview {
+  vendor: string;
+  decision: VendorStatus;
+  score: number;
+  findings: ScorecardFinding[];
+  citations: ExtractedField[];
+  auditTrail: AuditRecord[];
+}
+
+export interface BackendState {
+  vendors: VendorRecord[];
+  documents: VendorDocument[];
+  extractions: VendorExtraction[];
+  auditRecords: AuditRecord[];
+  fieldReviewStates: FieldReviewState[];
+  ruleReviewStates: RuleReviewState[];
+  packageConfig: PackageSetupConfig;
+  reports?: Record<string, ReportPreview>;
 }

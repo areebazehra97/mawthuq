@@ -33,17 +33,17 @@ export function EcosystemFitPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             {architectureFlow.map((step, index) => (
               <div key={step} className="relative">
-                <div className="rounded-3xl border border-slate-200 bg-white p-5 text-center shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <div className="rounded-xl border border-border bg-white p-5 text-center shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Step {index + 1}
                   </p>
-                  <p className="mt-3 font-semibold text-slate-900">{step}</p>
+                  <p className="mt-3 font-semibold text-foreground">{step}</p>
                 </div>
                 {index < architectureFlow.length - 1 ? (
-                  <div className="hidden xl:flex absolute inset-y-0 -right-3 items-center text-slate-400">
+                  <div className="hidden xl:flex absolute inset-y-0 -right-3 items-center text-muted-foreground">
                     →
                   </div>
                 ) : null}
@@ -59,7 +59,7 @@ export function EcosystemFitPage() {
                   Storage Layer
                 </p>
                 <p className="mt-2 text-2xl font-semibold">Common Data Environment (CDE)</p>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground/70">
                   Vendor documents, scorecards, citations, and audit trails are retained underneath the operating flow as the controlled storage and governance layer.
                 </p>
               </div>
@@ -83,7 +83,7 @@ export function EcosystemFitPage() {
               "Applies deterministic business rules to produce defensible recommendations.",
               "Routes findings into human review and downstream release decisions.",
             ].map((item) => (
-              <div key={item} className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+              <div key={item} className="rounded-lg bg-surface p-4 text-sm leading-6 text-foreground">
                 {item}
               </div>
             ))}
@@ -98,21 +98,21 @@ export function EcosystemFitPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-semibold text-slate-900">AI Compliance Analysis</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+            <div className="rounded-lg border border-border p-4">
+              <p className="font-semibold text-foreground">AI Compliance Analysis</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Compliance analysis can assess broader project and document obligations, while Mawthūq focuses specifically on vendor prequalification before tender invitation.
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 p-4">
-              <p className="font-semibold text-slate-900">AI Bid Analysis</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+            <div className="rounded-lg border border-border p-4">
+              <p className="font-semibold text-foreground">AI Bid Analysis</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Bid analysis evaluates tender submissions and commercial positions. Mawthūq feeds trusted, prequalified vendors into that system rather than replacing it.
               </p>
             </div>
-            <div className="rounded-3xl border border-primary/30 bg-primary/10 p-4">
-              <p className="font-semibold text-slate-900">Strategic implication</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
+              <p className="font-semibold text-foreground">Strategic implication</p>
+              <p className="mt-2 text-sm leading-6 text-foreground">
                 Mawthūq strengthens the full WhiteHelmet ecosystem by improving who enters downstream analysis, not by duplicating downstream intelligence functions.
               </p>
             </div>

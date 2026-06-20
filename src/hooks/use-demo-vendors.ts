@@ -1,14 +1,32 @@
-import { useEffect, useState } from "react";
-import { vendorStorageKey } from "@/data/seed";
+import { type SetStateAction, useCallback, useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { subscribeToDataChanged, emitDataChanged } from "@/lib/data-events";
 import { loadVendors } from "@/lib/storage";
 import type { VendorRecord } from "@/types";
 
 export function useDemoVendors() {
-  const [vendors, setVendors] = useState<VendorRecord[]>(() => loadVendors());
+  const [vendors, setVendorsState] = useState<VendorRecord[]>(() => loadVendors());
+
+  const refresh = useCallback(async () => {
+    try {
+      setVendorsState(await api.getVendors());
+    } catch {
+      setVendorsState(loadVendors());
+    }
+  }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(vendorStorageKey, JSON.stringify(vendors));
-  }, [vendors]);
+    void refresh();
+    return subscribeToDataChanged(refresh);
+  }, [refresh]);
 
-  return { vendors, setVendors };
+  const setVendors = useCallback((updater: SetStateAction<VendorRecord[]>) => {
+    setVendorsState((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater;
+      void api.saveVendors(next).then(() => emitDataChanged("vendors")).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  return { vendors, setVendors, refresh };
 }

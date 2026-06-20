@@ -5,6 +5,7 @@ import {
   ruleReviewStorageKey,
   seededAuditRecords,
   seededPackageConfig,
+  seededVendorExtractions,
   seededVendorDocuments,
   seededVendors,
   vendorStorageKey,
@@ -15,12 +16,34 @@ import type {
   FieldReviewState,
   PackageSetupConfig,
   RuleReviewState,
+  VendorExtraction,
   VendorDocument,
   VendorRecord,
 } from "@/types";
 
+const DATA_VERSION = "3";
+const DATA_VERSION_KEY = "mawthuq-data-version";
+
+function isCurrentVersion(): boolean {
+  return window.localStorage.getItem(DATA_VERSION_KEY) === DATA_VERSION;
+}
+
+function stampVersion() {
+  window.localStorage.setItem(DATA_VERSION_KEY, DATA_VERSION);
+}
+
 export function loadVendors(): VendorRecord[] {
   if (typeof window === "undefined") {
+    return seededVendors;
+  }
+
+  if (!isCurrentVersion()) {
+    window.localStorage.removeItem(vendorStorageKey);
+    window.localStorage.removeItem(vendorDocumentsStorageKey);
+    window.localStorage.removeItem(packageConfigStorageKey);
+    window.localStorage.removeItem(auditRecordsStorageKey);
+    stampVersion();
+    window.localStorage.setItem(vendorStorageKey, JSON.stringify(seededVendors));
     return seededVendors;
   }
 
@@ -105,6 +128,10 @@ export function loadAuditRecords(): AuditRecord[] {
     window.localStorage.setItem(auditRecordsStorageKey, JSON.stringify(seededAuditRecords));
     return seededAuditRecords;
   }
+}
+
+export function loadVendorExtractions(): VendorExtraction[] {
+  return seededVendorExtractions;
 }
 
 export function loadFieldReviewState(): FieldReviewState[] {

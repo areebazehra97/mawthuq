@@ -3,31 +3,48 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif;
-  color-scheme: dark;
-  --background: 210 16% 13%;
-  --foreground: 210 20% 96%;
+  /* Mawthuq design system — deep navy + Saudi green, professional light mode */
+  --background: 224 20% 97%;
+  --foreground: 224 28% 16%;
   --card: 0 0% 100%;
-  --card-foreground: 210 16% 14%;
+  --card-foreground: 224 28% 16%;
   --popover: 0 0% 100%;
-  --popover-foreground: 210 16% 14%;
-  --primary: 88 87% 57%;
-  --primary-foreground: 210 16% 10%;
-  --secondary: 210 20% 94%;
-  --secondary-foreground: 210 16% 16%;
-  --muted: 210 14% 90%;
-  --muted-foreground: 210 10% 42%;
-  --accent: 88 87% 57%;
-  --accent-foreground: 210 16% 10%;
-  --border: 210 10% 84%;
-  --input: 210 10% 84%;
-  --ring: 88 87% 57%;
-  --success: 145 63% 42%;
-  --warning: 38 92% 52%;
-  --danger: 0 72% 55%;
+  --popover-foreground: 224 28% 16%;
+  --primary: 224 40% 20%;           /* deep navy */
+  --primary-foreground: 224 20% 97%;
+  --secondary: 224 15% 93%;
+  --secondary-foreground: 224 40% 20%;
+  --muted: 224 12% 95%;
+  --muted-foreground: 224 8% 46%;
+  --accent: 155 33% 35%;            /* Saudi green */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 16 62% 44%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 224 12% 88%;
+  --input: 224 12% 91%;
+  --ring: 155 33% 35%;
+  --success: 155 38% 42%;
+  --success-foreground: 0 0% 100%;
+  --warning: 43 96% 46%;
+  --warning-foreground: 224 28% 16%;
+  --danger: 16 62% 44%;
+  --info: 245 38% 45%;
+  --info-foreground: 0 0% 100%;
+  --surface: 224 10% 96%;
+  --surface-2: 224 12% 94%;
+  /* Sidebar — deep navy shell */
+  --sidebar: 224 40% 20%;
+  --sidebar-foreground: 224 20% 97%;
+  --sidebar-primary: 155 33% 35%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 224 35% 26%;
+  --sidebar-accent-foreground: 224 20% 97%;
+  --sidebar-border: 224 35% 26%;
+  --sidebar-ring: 155 33% 35%;
 }
 
 * {
+  box-sizing: border-box;
   border-color: hsl(var(--border));
 }
 
@@ -35,11 +52,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(144, 255, 64, 0.12), transparent 30%),
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.04), transparent 24%),
-    linear-gradient(180deg, #182126 0%, #10161a 100%);
+  background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: Inter, "Noto Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+[dir="rtl"] {
+  font-family: "Noto Sans Arabic", Inter, system-ui, sans-serif;
 }
 
 #root {
@@ -53,6 +73,7 @@ body {
   h4,
   p {
     margin: 0;
+    overflow-wrap: anywhere;
   }
 
   button,
@@ -64,7 +85,15 @@ body {
 }
 
 @layer components {
-  .panel-surface {
-    @apply rounded-[28px] border border-white/10 bg-[#11181c]/90 shadow-shell backdrop-blur;
+  .status-pill {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium leading-tight border border-transparent whitespace-nowrap;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded text-[0.7rem] font-medium border;
+    padding: 0.1rem 0.45rem;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    border-color: hsl(var(--border));
   }
 }

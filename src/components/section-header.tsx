@@ -19,24 +19,24 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 sm:flex-row sm:items-end sm:justify-between",
+        "flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-card sm:p-6 lg:flex-row lg:items-end lg:justify-between",
         className,
       )}
     >
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-accent">
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
-        <p className="max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
+        <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
           {description}
         </p>
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="w-full shrink-0 lg:w-auto">{action}</div> : null}
     </div>
   );
 }

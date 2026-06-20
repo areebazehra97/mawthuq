@@ -19,16 +19,18 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardContent className="flex items-start justify-between gap-4 p-6">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+      <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+        <div className="min-w-0 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {label}
           </p>
-          <p className="text-3xl font-semibold text-slate-900">{value}</p>
-          <p className="text-sm leading-6 text-slate-500">{supporting}</p>
+          <p className="text-3xl font-semibold text-foreground">{value}</p>
+          <p className="text-sm leading-5 text-muted-foreground">{supporting}</p>
         </div>
         {icon ? (
-          <div className="rounded-2xl bg-slate-900 p-3 text-primary">{icon}</div>
+          <div className="self-start rounded-lg bg-primary/8 p-2.5 text-accent ring-1 ring-border">
+            {icon}
+          </div>
         ) : null}
       </CardContent>
     </Card>

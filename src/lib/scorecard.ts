@@ -1,4 +1,3 @@
-import { seededAiExtractions } from "@/data/seed";
 import type {
   ExtractedField,
   PackageSetupConfig,
@@ -11,6 +10,12 @@ import type {
 } from "@/types";
 
 const REVIEW_DATE = new Date("2026-06-16T00:00:00Z");
+
+export const CRITICAL_DOC_TYPES = [
+  "Commercial Registration",
+  "ZATCA Certificate",
+  "Contractor Classification",
+] as const;
 
 type DimensionName = ScorecardDimensionScore["dimension"];
 
@@ -26,8 +31,8 @@ export function buildVendorScorecard(
   vendor: VendorRecord,
   documents: VendorDocument[],
   config: PackageSetupConfig,
+  extractions: ExtractedField[],
 ): VendorScorecard {
-  const extractions = seededAiExtractions[vendor.id] ?? [];
   const findings: ScorecardFinding[] = [
     evaluateCrValidity(vendor.id, documents, extractions),
     evaluateZatcaValidity(vendor.id, documents, extractions),
@@ -45,8 +50,12 @@ export function buildVendorScorecard(
   const dimensions = buildDimensionScores(findings, config);
   const weightedScore = calculateWeightedScore(dimensions);
   const hardGateFailures = findings.filter((finding) => finding.hardGate && finding.result === "Fail").length;
-  const missingDocuments = documents.filter((document) => document.status === "Missing").length;
-  const expiredDocuments = documents.filter((document) => document.status === "Expired").length;
+  const currentDocs = documents.filter((d) => d.isCurrentVersion !== false);
+  const missingDocuments = currentDocs.filter((document) => document.status === "Missing").length;
+  const expiredDocuments = currentDocs.filter((document) => document.status === "Expired").length;
+  const criticalDocExpired = currentDocs.some(
+    (d) => d.status === "Expired" && (CRITICAL_DOC_TYPES as readonly string[]).includes(d.documentType),
+  );
   const decision = deriveDecision(weightedScore, hardGateFailures, config);
   const riskLevel = deriveRiskLevel(weightedScore, hardGateFailures);
 
@@ -58,6 +67,7 @@ export function buildVendorScorecard(
     missingDocuments,
     expiredDocuments,
     hardGateFailures,
+    criticalDocExpired,
     dimensions,
     findings,
   };

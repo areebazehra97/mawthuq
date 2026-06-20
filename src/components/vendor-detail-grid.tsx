@@ -26,25 +26,25 @@ const reviewStateMap = {
 
 export function VendorDetailGrid({ vendors }: { vendors: VendorRecord[] }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-3">
+    <div className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-3">
       {vendors.map((vendor) => (
         <Card key={vendor.id} className="h-full">
           <CardHeader className="space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <CardTitle>{vendor.name}</CardTitle>
                 <CardDescription>{vendor.arabicName}</CardDescription>
               </div>
               <StatusBadge status={vendor.status} />
             </div>
-            <div className="grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-4">
+            <div className="grid grid-cols-2 gap-3 rounded-lg bg-surface p-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Score</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{vendor.score}</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Score</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{vendor.score}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Stage</p>
-                <p className="mt-2 text-sm font-semibold text-slate-900">{vendor.reviewStage}</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Stage</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{vendor.reviewStage}</p>
               </div>
             </div>
           </CardHeader>
@@ -53,11 +53,11 @@ export function VendorDetailGrid({ vendors }: { vendors: VendorRecord[] }) {
               {vendor.metrics.map((metric) => (
                 <div
                   key={metric.label}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 p-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{metric.label}</p>
-                    <p className="text-sm text-slate-500">{metric.value}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{metric.label}</p>
+                    <p className="text-sm text-muted-foreground">{metric.value}</p>
                   </div>
                   <Badge variant={metricToneMap[metric.tone ?? "neutral"]}>
                     {metricToneLabelMap[metric.tone ?? "neutral"]}
@@ -67,19 +67,19 @@ export function VendorDetailGrid({ vendors }: { vendors: VendorRecord[] }) {
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Review checklist
               </p>
               {vendor.reviewItems.map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl bg-slate-50 p-4"
+                  className="rounded-lg bg-surface p-4"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium text-slate-900">{item.label}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-medium text-foreground">{item.label}</p>
                     <Badge variant={reviewStateMap[item.state]}>{item.state}</Badge>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.evidence}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.evidence}</p>
                 </div>
               ))}
             </div>

@@ -26,7 +26,7 @@ export function SimpleChartCard({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="flex h-4 overflow-hidden rounded-full bg-slate-200">
+        <div className="flex h-4 overflow-hidden rounded-full bg-surface-2">
           {data.map((item) => (
             <div
               key={item.label}
@@ -43,13 +43,13 @@ export function SimpleChartCard({
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <div className="flex items-center gap-3">
                     <span className={`h-3 w-3 rounded-full ${item.color}`} />
-                    <span className="font-medium text-slate-900">{item.label}</span>
+                    <span className="font-medium text-foreground">{item.label}</span>
                   </div>
-                  <div className="text-slate-500">
+                  <div className="text-muted-foreground">
                     {item.value} <span className="ml-1 text-xs">{percent}%</span>
                   </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
                     className={`h-full rounded-full ${item.color}`}
                     style={{ width: `${percent}%` }}

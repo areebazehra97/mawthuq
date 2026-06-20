@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CheckCircle2, Clock3, Edit3, Flag, ShieldCheck } from "lucide-react";
-import { reviewerRoles, seededAiExtractions } from "@/data/seed";
+import { reviewerRoles } from "@/data/seed";
 import { SectionHeader } from "@/components/section-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { useHumanReview } from "@/hooks/use-human-review";
 import { usePackageConfig } from "@/hooks/use-package-config";
 import { useVendorDocuments } from "@/hooks/use-vendor-documents";
+import { useVendorExtractions } from "@/hooks/use-vendor-extractions";
 import { buildVendorScorecard } from "@/lib/scorecard";
 import type {
   FieldReviewAction,
@@ -23,6 +24,7 @@ export function HumanReviewPage() {
   const { vendors } = useDemoVendors();
   const { documents } = useVendorDocuments();
   const { config } = usePackageConfig();
+  const { extractions } = useVendorExtractions();
   const {
     auditRecords,
     setAuditRecords,
@@ -36,10 +38,11 @@ export function HumanReviewPage() {
   const [activeRole, setActiveRole] = useState<ReviewerRole>("Procurement Analyst");
 
   const activeVendor = vendors.find((vendor) => vendor.id === activeVendorId) ?? vendors[0];
-  const extractionFields = seededAiExtractions[activeVendorId] ?? [];
+  const extractionFields =
+    extractions.find((extraction) => extraction.vendorId === activeVendorId)?.fields ?? [];
   const vendorDocuments = documents.filter((document) => document.vendorId === activeVendorId);
   const scorecard = activeVendor
-    ? buildVendorScorecard(activeVendor, vendorDocuments, config)
+    ? buildVendorScorecard(activeVendor, vendorDocuments, config, extractionFields)
     : null;
 
   const vendorAudit = useMemo(() => {
@@ -162,7 +165,7 @@ export function HumanReviewPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900">Reviewer Role</p>
+              <p className="text-sm font-semibold text-foreground">Reviewer Role</p>
               <div className="flex flex-wrap gap-2">
                 {reviewerRoles.map((role) => (
                   <Button
@@ -182,16 +185,16 @@ export function HumanReviewPage() {
                 key={vendor.id}
                 type="button"
                 onClick={() => setActiveVendorId(vendor.id)}
-                className={`block w-full rounded-3xl border p-4 text-left transition ${
+                className={`block w-full rounded-xl border p-4 text-left transition ${
                   vendor.id === activeVendorId
                     ? "border-primary/40 bg-primary/10"
-                    : "border-slate-200 bg-white"
+                    : "border-border bg-white"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-slate-900">{vendor.name}</p>
-                    <p className="mt-1 text-sm text-slate-500">{vendor.summary}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground">{vendor.name}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{vendor.summary}</p>
                   </div>
                   <StatusBadge status={vendor.status} />
                 </div>
@@ -216,7 +219,7 @@ export function HumanReviewPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-4">
+            <CardContent className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
               <SummaryMetric label="Fields" value={String(extractionFields.length)} icon={<CheckCircle2 className="h-5 w-5" />} />
               <SummaryMetric label="Rules" value={String(scorecard.findings.length)} icon={<ShieldCheck className="h-5 w-5" />} />
               <SummaryMetric label="Decision" value={scorecard.decision} icon={<Flag className="h-5 w-5" />} />
@@ -236,22 +239,22 @@ export function HumanReviewPage() {
                 {extractionFields.map((field) => {
                   const state = getFieldState(field.label);
                   return (
-                    <div key={field.label} className="rounded-3xl border border-slate-200 p-4">
+                    <div key={field.label} className="rounded-xl border border-border p-4">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-slate-900">{field.label}</p>
+                            <p className="font-semibold text-foreground">{field.label}</p>
                             <Badge variant="neutral">{field.confidence}% confidence</Badge>
                             {state ? <Badge variant="accent">{state.status}</Badge> : null}
                           </div>
-                          <p className="mt-2 text-sm font-medium text-slate-900">
+                          <p className="mt-2 text-sm font-medium text-foreground">
                             {state?.currentValue ?? field.value}
                           </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-500">
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
                             {field.sourceDocument} · p.{field.pageNumber} · {field.evidenceSnippet}
                           </p>
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 lg:max-w-[220px] lg:justify-end">
                           {(["Accept", "Reject", "Edit", "Escalate"] as FieldReviewAction[]).map((action) => (
                             <Button
                               key={action}
@@ -282,9 +285,9 @@ export function HumanReviewPage() {
                 {scorecard.findings.map((finding) => {
                   const state = getRuleState(finding.id);
                   return (
-                    <div key={finding.id} className="rounded-3xl border border-slate-200 p-4">
+                    <div key={finding.id} className="rounded-xl border border-border p-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-slate-900">{finding.ruleName}</p>
+                        <p className="font-semibold text-foreground">{finding.ruleName}</p>
                         <Badge variant="neutral">{finding.dimension}</Badge>
                         {finding.hardGate ? <Badge variant="danger">Hard Gate</Badge> : null}
                         <Badge
@@ -299,8 +302,8 @@ export function HumanReviewPage() {
                           {state?.overrideResult ? `Override: ${state.overrideResult}` : finding.result}
                         </Badge>
                       </div>
-                      <p className="mt-2 text-sm text-slate-500">{finding.inputValue}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                      <p className="mt-2 text-sm text-muted-foreground">{finding.inputValue}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         {finding.sourceCitation} · {finding.explanation}
                       </p>
                       <div className="mt-4 grid gap-3">
@@ -331,18 +334,18 @@ export function HumanReviewPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {vendorAudit.map((record) => (
-                <div key={record.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <div key={record.id} className="rounded-xl border border-border bg-surface p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-slate-900">{record.title}</p>
+                        <p className="font-semibold text-foreground">{record.title}</p>
                         <Badge variant={record.actor === "System" ? "neutral" : "accent"}>
                           {record.actor}
                         </Badge>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">{record.detail}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{record.detail}</p>
                     </div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {record.timestamp}
                     </p>
                   </div>
@@ -366,23 +369,23 @@ function SummaryMetric({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-center gap-3 text-slate-900">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center gap-3 text-foreground">
         {icon}
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {label}
         </p>
       </div>
-      <p className="mt-3 text-lg font-semibold text-slate-900">{value}</p>
+      <p className="mt-3 text-lg font-semibold text-foreground">{value}</p>
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg bg-surface p-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

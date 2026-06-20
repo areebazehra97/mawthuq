@@ -55,33 +55,33 @@ export function PackageSetupPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-slate-900">Package Name</span>
+              <span className="text-sm font-semibold text-foreground">Package Name</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                 value={config.packageName}
                 onChange={(event) => updateField("packageName", event.target.value)}
               />
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-slate-900">Project Name</span>
+              <span className="text-sm font-semibold text-foreground">Project Name</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                 value={config.projectName}
                 onChange={(event) => updateField("projectName", event.target.value)}
               />
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-slate-900">Work Category</span>
+              <span className="text-sm font-semibold text-foreground">Work Category</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                 value={config.workCategory}
                 onChange={(event) => updateField("workCategory", event.target.value)}
               />
             </label>
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-slate-900">Package Value Band</span>
+              <span className="text-sm font-semibold text-foreground">Package Value Band</span>
               <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                 value={config.packageValueBand}
                 onChange={(event) => updateField("packageValueBand", event.target.value)}
               />
@@ -98,22 +98,22 @@ export function PackageSetupPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-slate-900">Required Documents</p>
+              <p className="text-sm font-semibold text-foreground">Required Documents</p>
               {config.requiredDocuments.map((document) => (
                 <div
                   key={document}
-                  className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-700"
+                  className="rounded-lg border border-border p-4 text-sm text-foreground"
                 >
                   {document}
                 </div>
               ))}
             </div>
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-slate-900">Hard Gate Rules</p>
+              <p className="text-sm font-semibold text-foreground">Hard Gate Rules</p>
               {config.hardGateRules.map((rule) => (
                 <div
                   key={rule}
-                  className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-700"
+                  className="rounded-lg bg-surface p-4 text-sm leading-6 text-foreground"
                 >
                   {rule}
                 </div>
@@ -141,8 +141,8 @@ export function PackageSetupPage() {
             ].map(([key, label]) => (
               <label key={key} className="block space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-slate-900">{label}</span>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                  <span className="text-sm text-muted-foreground">
                     {config.scoringWeights[key as keyof typeof config.scoringWeights]}%
                   </span>
                 </div>
@@ -161,9 +161,9 @@ export function PackageSetupPage() {
                 />
               </label>
             ))}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-900">Total Weight</p>
-              <p className="mt-2 text-sm text-slate-500">
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <p className="text-sm font-semibold text-foreground">Total Weight</p>
+              <p className="mt-2 text-sm text-muted-foreground">
                 {totalWeight}% configured. Teams can rebalance the model to match project governance.
               </p>
             </div>
@@ -180,23 +180,23 @@ export function PackageSetupPage() {
           <CardContent className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-900">PASS &gt;=</span>
+                <span className="text-sm font-semibold text-foreground">PASS &gt;=</span>
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                  className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                   value={config.decisionThresholds.pass}
                   onChange={(event) => updateThreshold("pass", Number(event.target.value))}
                 />
               </label>
               <label className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-900">CONDITIONAL Min</span>
+                <span className="text-sm font-semibold text-foreground">CONDITIONAL Min</span>
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                  className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                   value={config.decisionThresholds.conditionalMin}
                   onChange={(event) =>
                     updateThreshold("conditionalMin", Number(event.target.value))
@@ -204,12 +204,12 @@ export function PackageSetupPage() {
                 />
               </label>
               <label className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-900">CONDITIONAL Max</span>
+                <span className="text-sm font-semibold text-foreground">CONDITIONAL Max</span>
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary"
+                  className="w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary"
                   value={config.decisionThresholds.conditionalMax}
                   onChange={(event) =>
                     updateThreshold("conditionalMax", Number(event.target.value))
@@ -218,29 +218,29 @@ export function PackageSetupPage() {
               </label>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl bg-emerald-50 p-4">
+              <div className="rounded-lg bg-emerald-50 p-4">
                 <p className="text-sm font-semibold text-emerald-800">PASS</p>
                 <p className="mt-2 text-sm leading-6 text-emerald-700">
                   Score {">="} {config.decisionThresholds.pass}
                 </p>
               </div>
-              <div className="rounded-2xl bg-amber-50 p-4">
+              <div className="rounded-lg bg-amber-50 p-4">
                 <p className="text-sm font-semibold text-amber-800">CONDITIONAL</p>
                 <p className="mt-2 text-sm leading-6 text-amber-700">
                   Score {config.decisionThresholds.conditionalMin}-
                   {config.decisionThresholds.conditionalMax}
                 </p>
               </div>
-              <div className="rounded-2xl bg-rose-50 p-4">
+              <div className="rounded-lg bg-rose-50 p-4">
                 <p className="text-sm font-semibold text-rose-800">FAIL</p>
                 <p className="mt-2 text-sm leading-6 text-rose-700">
                   Score {"<"} {config.decisionThresholds.conditionalMin}
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4">
-              <p className="text-sm font-semibold text-slate-900">Why this matters</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+            <div className="rounded-lg border border-primary/30 bg-primary/10 p-4">
+              <p className="text-sm font-semibold text-foreground">Why this matters</p>
+              <p className="mt-2 text-sm leading-6 text-foreground">
                 Decision bands are configured explicitly in the product so reviewers can defend recommendations as business-governed rules, not opaque AI judgments.
               </p>
             </div>
