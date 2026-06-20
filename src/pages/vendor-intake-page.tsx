@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
-  Activity, AlertCircle, AlertTriangle, ArrowLeft, Award, Briefcase,
+  Activity, AlertCircle, ArrowLeft, Award, Briefcase,
   Calendar, Check, CheckCircle2, ChevronDown, ChevronUp,
   Clock, Copy, FileText, FolderOpen, Mail, MapPin, Plus,
   RefreshCw, Search, Settings, Shield, Star, Users,
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { InviteVendorToPackageModal } from "@/components/invite-vendor-to-package-modal";
 import { getReadinessStatus, type PackageVendorLink, type PkgAppStatus, type PkgQualStatus, type PkgReadinessStatus } from "@/data/package-applications";
 import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendor, type VendorGlobalStatus } from "@/data/vendor-master-seed";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
@@ -1433,7 +1433,7 @@ function InvitationsPanel({
           <div className="relative max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input type="text" placeholder="Search by company, contact or email…" value={searchQuery}
-              onChange={e => setSearch(e.target.value)} className={cn(inputCls, "pl-9")} />
+              onChange={e => setSearch(e.target.value)} className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40" />
           </div>
         </div>
         <CardContent className="overflow-x-auto px-0 pb-0">
