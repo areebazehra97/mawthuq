@@ -12,7 +12,7 @@ import {
 import { tradeCategories } from "@/data/seed";
 import { cn } from "@/lib/utils";
 
-const API = "http://localhost:8787";
+const API = "";
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 

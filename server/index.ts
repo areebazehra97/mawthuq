@@ -1,5 +1,8 @@
 import cors from "cors";
 import express from "express";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { Resend } from "resend";
 import { createExtractionRun } from "./extraction";
 import { clearStoredUploads, saveUpload } from "./file-storage";
@@ -30,7 +33,7 @@ import type {
 } from "../src/types";
 
 const app = express();
-const PORT = Number(process.env.MAWTHUQ_API_PORT ?? 8787);
+const PORT = Number(process.env.PORT ?? process.env.MAWTHUQ_API_PORT ?? 8787);
 
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
@@ -918,6 +921,16 @@ function buildInvitationEmail({
   </div>
 </body>
 </html>`;
+}
+
+// Serve Vite build in production
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const distPath = join(__dirname, "../dist");
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(join(distPath, "index.html"));
+  });
 }
 
 app.listen(PORT, () => {

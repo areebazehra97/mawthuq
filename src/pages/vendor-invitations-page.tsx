@@ -105,7 +105,7 @@ export function VendorInvitationsPage() {
   async function sendEmail(id: string) {
     setSendingEmailId(id);
     try {
-      const res = await fetch(`http://localhost:8787/api/invitations/${id}/send-email`, { method: "POST" });
+      const res = await fetch(`/api/invitations/${id}/send-email`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         if (data.registrationUrl) {
@@ -149,7 +149,7 @@ export function VendorInvitationsPage() {
       });
 
       // Send email immediately
-      const res = await fetch(`http://localhost:8787/api/invitations/${id}/send-email`, { method: "POST" });
+      const res = await fetch(`/api/invitations/${id}/send-email`, { method: "POST" });
       const data = await res.json();
 
       if (!res.ok) {

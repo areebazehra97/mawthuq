@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { VendorRecord } from "@/types";
 
-const API = "http://localhost:8787";
+const API = "";
 
 export function useRegisteredVendors() {
   const [vendors, setVendors] = useState<VendorRecord[]>([]);
