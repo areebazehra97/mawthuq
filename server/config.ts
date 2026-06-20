@@ -8,7 +8,7 @@ export const serverConfig = {
   stateStoreDriver: process.env.MAWTHUQ_STATE_DRIVER ?? "local",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   fromEmail: process.env.FROM_EMAIL ?? "Mawthuq <onboarding@resend.dev>",
-  appUrl: process.env.APP_URL ?? "http://localhost:5173",
+  appUrl: (process.env.APP_URL ?? "http://localhost:5173").replace(/\/+$/, ""),
 };
 
 export function hasOpenAiConfig() {

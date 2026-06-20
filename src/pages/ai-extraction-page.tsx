@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, FileSearch, Languages, Play, Quote, ShieldAlert } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { aiProgressStages } from "@/data/seed";
 import { DocumentStatusBadge } from "@/components/document-status-badge";
 import { SectionHeader } from "@/components/section-header";
@@ -13,13 +13,23 @@ import { useVendorDocuments } from "@/hooks/use-vendor-documents";
 import { useVendorExtractions } from "@/hooks/use-vendor-extractions";
 
 export function AiExtractionPage() {
+  const [searchParams] = useSearchParams();
   const { vendors } = useDemoVendors();
   const { documents } = useVendorDocuments();
   const { extractions, runExtraction } = useVendorExtractions();
-  const [activeVendorId, setActiveVendorId] = useState<string>(vendors[0]?.id ?? "");
+  const initialVendorId = searchParams.get("vendorId") ?? vendors[0]?.id ?? "";
+  const [activeVendorId, setActiveVendorId] = useState<string>(initialVendorId);
   const [runningVendorId, setRunningVendorId] = useState<string | null>(null);
   const [activeStageIndex, setActiveStageIndex] = useState<number>(-1);
   const [completedVendorIds, setCompletedVendorIds] = useState<Record<string, boolean>>({});
+
+  // Sync vendorId param once the vendor list loads from the API
+  useEffect(() => {
+    const paramId = searchParams.get("vendorId");
+    if (paramId && vendors.some((v) => v.id === paramId)) {
+      setActiveVendorId(paramId);
+    }
+  }, [vendors, searchParams]);
 
   const activeVendor = vendors.find((vendor) => vendor.id === activeVendorId) ?? vendors[0];
   const activeDocuments = useMemo(
