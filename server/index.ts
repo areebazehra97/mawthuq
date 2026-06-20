@@ -289,9 +289,7 @@ app.post("/api/invitations", async (req, res) => {
     await writeState(state);
     res.status(201).json(nextInvitation);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Invalid invitation payload";
-    const status = msg.startsWith("Supabase") ? 500 : 400;
-    res.status(status).json({ error: msg });
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid invitation payload" });
   }
 });
 

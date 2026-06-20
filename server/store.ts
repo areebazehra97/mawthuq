@@ -33,26 +33,22 @@ async function writeLocalState(state: BackendState) {
 export async function readState(): Promise<BackendState> {
   const supabase = getSupabaseAdminClient();
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from("mawthuq_app_state")
-        .select("state_json")
-        .eq("id", "default")
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from("mawthuq_app_state")
+      .select("state_json")
+      .eq("id", "default")
+      .maybeSingle();
 
-      if (error) throw error;
-
-      if (data?.state_json) {
-        return normalizeState(data.state_json as Partial<BackendState>);
-      }
-
-      // First run: seed Supabase
-      const seeded = normalizeState(seededBackendState);
-      await supabase.from("mawthuq_app_state").upsert({ id: "default", state_json: seeded });
-      return seeded;
-    } catch (err) {
-      console.error("[store] Supabase read failed, falling back to local:", err);
+    if (!error && data?.state_json) {
+      return normalizeState(data.state_json as Partial<BackendState>);
     }
+
+    // First run: seed Supabase and return the seeded state
+    await supabase.from("mawthuq_app_state").upsert({
+      id: "default",
+      state_json: seededBackendState,
+    });
+    return normalizeState(seededBackendState);
   }
 
   return readLocalState();
@@ -67,11 +63,9 @@ export async function writeState(state: BackendState) {
       state_json: normalized,
     });
 
-    if (error) {
-      // Throw so callers get a 500 instead of a mysterious 404 on the next read
-      throw new Error(`Supabase write failed: ${error.message}`);
+    if (!error) {
+      return;
     }
-    return;
   }
 
   await writeLocalState(normalized);
