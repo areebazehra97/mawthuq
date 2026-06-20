@@ -366,6 +366,7 @@ export interface BackendInvitation {
   contactName: string;
   contactEmail: string;
   category?: string;
+  note?: string;
   status: InvitationStatusValue;
   invitedAt: string;
   expiresAt?: string;

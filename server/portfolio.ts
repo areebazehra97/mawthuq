@@ -429,6 +429,7 @@ export function buildInvitation(
     contactName: requireString(input.contactName, "contactName"),
     contactEmail: requireString(input.contactEmail, "contactEmail"),
     category: requireString(input.category, "category", { optional: true }),
+    note: requireString(input.note, "note", { optional: true }),
     status: requireEnum(input.status, INVITATION_STATUSES, "status", { optional: true }) ?? "Invited",
     invitedAt: requireString(input.invitedAt, "invitedAt", { optional: true }) ?? timestamp,
     expiresAt: requireString(input.expiresAt, "expiresAt", { optional: true }),
@@ -476,6 +477,10 @@ export function patchInvitation(
       input.category !== undefined
         ? requireString(input.category, "category", { optional: true })
         : invitation.category,
+    note:
+      input.note !== undefined
+        ? requireString(input.note, "note", { optional: true })
+        : invitation.note,
     status:
       requireEnum(input.status, INVITATION_STATUSES, "status", { optional: true }) ??
       invitation.status,

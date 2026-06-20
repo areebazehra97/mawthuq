@@ -1,21 +1,17 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Check,
   ChevronDown,
   ChevronUp,
   Copy,
   Mail,
-  Plus,
   RefreshCw,
   Search,
-  Send,
 } from "lucide-react";
 import { toast } from "sonner";
-import { tradeCategories } from "@/data/seed";
 import { SectionHeader } from "@/components/section-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useInvitations } from "@/hooks/use-invitations";
 import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
@@ -54,24 +50,12 @@ function today() {
 /* ── Page ───────────────────────────────────────────────── */
 
 export function VendorInvitationsPage() {
-  const [searchParams] = useSearchParams();
   const { backendProjects } = useProjects();
   const { packages } = useProjectPackages();
-  const { invitations, createInvitation, updateInvitation } = useInvitations();
-  const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
+  const { invitations, updateInvitation } = useInvitations();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  /* Form state */
-  const [form, setForm] = useState({
-    companyName: "",
-    contactPerson: "",
-    email: "",
-    tradeCategory: "",
-    projectContext: "",
-  });
-  const [formError, setFormError] = useState<string | null>(null);
 
   /* Stats */
   const invitationCards = useMemo<VendorInvitation[]>(
@@ -98,58 +82,6 @@ export function VendorInvitationsPage() {
       i.contactPerson.toLowerCase().includes(q) ||
       i.email.toLowerCase().includes(q),
     );
-
-  async function handleSend() {
-    if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
-      setFormError("Company name, contact person, email, and trade category are required.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setFormError("Please enter a valid email address.");
-      return;
-    }
-
-    const now   = new Date();
-    const normalizedContext = form.projectContext.trim().toLowerCase();
-    const linkedPackage = normalizedContext
-      ? packages.find((pkg) =>
-          `${pkg.name} ${pkg.category}`.toLowerCase().includes(normalizedContext),
-        )
-      : undefined;
-    const linkedProject = linkedPackage
-      ? backendProjects.find((project) => project.id === linkedPackage.projectId)
-      : normalizedContext
-        ? backendProjects.find((project) => project.name.toLowerCase().includes(normalizedContext))
-        : undefined;
-
-    try {
-      await createInvitation({
-        projectId: linkedProject?.id,
-        packageId: linkedPackage?.id,
-        companyName: form.companyName.trim(),
-        contactName: form.contactPerson.trim(),
-        contactEmail: form.email.trim(),
-        category: form.tradeCategory,
-        invitedAt: today(),
-        expiresAt: addDays(now, 30),
-        status: "Invited",
-      });
-      setForm({
-        companyName: "",
-        contactPerson: "",
-        email: "",
-        tradeCategory: "",
-        projectContext: "",
-      });
-      setFormError(null);
-      toast.success(`Invitation sent to ${form.email.trim()}`, {
-        description: `${form.companyName.trim()} · expires in 30 days`,
-      });
-      setShowForm(false);
-    } catch {
-      setFormError("Could not send invitation right now.");
-    }
-  }
 
   function copyLink(inv: VendorInvitation) {
     void navigator.clipboard.writeText(inv.registrationLink);
@@ -180,106 +112,17 @@ export function VendorInvitationsPage() {
       <SectionHeader
         eyebrow="Vendor Pipeline"
         title="Vendor Invitations"
-        description="Invite contractors to self-register through a tracked link. Every invitation generates a unique portal URL with a 30-day expiry and real-time status visibility."
+        description="Track package-linked vendor invitations, resend expired links, and monitor registration progress."
         action={
-          <button
-            type="button"
-            onClick={() => { setShowForm((v) => !v); setFormError(null); }}
+          <Link
+            to="/vendors?invite=1"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           >
-            {showForm ? <ChevronUp className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {showForm ? "Cancel" : "Invite Vendor"}
-          </button>
+            <Mail className="h-4 w-4" />
+            Invite from Vendor Master
+          </Link>
         }
       />
-
-      {/* ── Invite form (expandable) ── */}
-      {showForm && (
-        <Card className="border-primary/30 bg-primary/[0.03]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-accent" />
-              New vendor invitation
-            </CardTitle>
-            <CardDescription>
-              A unique registration link will be generated and sent to the vendor's contact.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Company Name" required>
-                <input
-                  type="text"
-                  placeholder="e.g. Al-Rajhi Contracting Co."
-                  value={form.companyName}
-                  onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-
-              <Field label="Contact Person" required>
-                <input
-                  type="text"
-                  placeholder="e.g. Khalid Al-Otaibi"
-                  value={form.contactPerson}
-                  onChange={(e) => setForm((f) => ({ ...f, contactPerson: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-
-              <Field label="Email Address" required>
-                <input
-                  type="email"
-                  placeholder="e.g. contact@company.sa"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-
-              <Field label="Trade Category" required>
-                <select
-                  value={form.tradeCategory}
-                  onChange={(e) => setForm((f) => ({ ...f, tradeCategory: e.target.value }))}
-                  className={inputCls}
-                >
-                  <option value="">Select a category…</option>
-                  {tradeCategories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Project / Package Context" className="sm:col-span-2">
-                <input
-                  type="text"
-                  placeholder="Optional — e.g. Diriyah Gate Phase 2, MEP Subcontractors"
-                  value={form.projectContext}
-                  onChange={(e) => setForm((f) => ({ ...f, projectContext: e.target.value }))}
-                  className={inputCls}
-                />
-              </Field>
-            </div>
-
-            {formError && (
-              <p className="mt-4 text-sm text-destructive">{formError}</p>
-            )}
-
-            <div className="mt-6 flex items-center gap-3">
-              <Button
-                onClick={handleSend}
-                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <><Send className="h-4 w-4" /> Send Invitation</>
-
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                Link expires in <span className="font-semibold">30 days</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ── Status filter tabs ── */}
       <div className="flex flex-wrap gap-2">
@@ -491,29 +334,6 @@ function InvitationRow({
   );
 }
 
-/* ── Sub-components ─────────────────────────────────────── */
-
-function Field({
-  label,
-  required,
-  children,
-  className,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("space-y-1.5", className)}>
-      <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-        {label}{required && <span className="ml-0.5 text-destructive">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
 function TimelinePoint({ label, value, done }: { label: string; value?: string; done: boolean }) {
   return (
     <div className="flex items-start gap-2">
@@ -530,8 +350,3 @@ function TimelinePoint({ label, value, done }: { label: string; value?: string; 
     </div>
   );
 }
-
-/* ── Constants ──────────────────────────────────────────── */
-
-const inputCls =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20";

@@ -249,6 +249,37 @@ app.post("/api/invitations", async (req, res) => {
   try {
     const state = await readState();
     const nextInvitation = buildInvitation(req.body as Record<string, unknown>);
+    const existingInvitation = state.invitations.find((item) => {
+      const samePackage = item.packageId !== undefined && item.packageId === nextInvitation.packageId;
+      const sameVendor = item.vendorId !== undefined && item.vendorId === nextInvitation.vendorId;
+      const sameEmail =
+        item.contactEmail.toLowerCase() === nextInvitation.contactEmail.toLowerCase();
+      const isActive =
+        item.status !== "Expired" &&
+        item.status !== "Bounced" &&
+        item.status !== "Declined";
+
+      return isActive && samePackage && (sameVendor || sameEmail);
+    });
+    if (existingInvitation) {
+      const mergedInvitation = {
+        ...existingInvitation,
+        projectId: existingInvitation.projectId ?? nextInvitation.projectId,
+        packageId: existingInvitation.packageId ?? nextInvitation.packageId,
+        applicationId: existingInvitation.applicationId ?? nextInvitation.applicationId,
+        vendorId: existingInvitation.vendorId ?? nextInvitation.vendorId,
+        category: existingInvitation.category ?? nextInvitation.category,
+        note: nextInvitation.note ?? existingInvitation.note,
+        updatedAt: nextInvitation.updatedAt,
+        lastActivityAt: nextInvitation.lastActivityAt,
+      };
+      state.invitations = state.invitations.map((item) =>
+        item.id === existingInvitation.id ? mergedInvitation : item,
+      );
+      await writeState(state);
+      res.json(mergedInvitation);
+      return;
+    }
     state.invitations = [nextInvitation, ...state.invitations];
     await writeState(state);
     res.status(201).json(nextInvitation);

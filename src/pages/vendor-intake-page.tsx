@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Activity, AlertCircle, AlertTriangle, ArrowLeft, Award, Briefcase,
-  Building2, Calendar, Check, CheckCircle2, ChevronDown, ChevronUp,
+  Calendar, Check, CheckCircle2, ChevronDown, ChevronUp,
   Clock, Copy, FileText, FolderOpen, Mail, MapPin, Plus,
-  RefreshCw, Search, Send, Settings, Shield, Star, Users, X,
+  RefreshCw, Search, Settings, Shield, Star, Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { tradeCategories } from "@/data/seed";
+import { InviteVendorToPackageModal } from "@/components/invite-vendor-to-package-modal";
 import { getReadinessStatus, type PackageVendorLink, type PkgAppStatus, type PkgQualStatus, type PkgReadinessStatus } from "@/data/package-applications";
 import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendor, type VendorGlobalStatus } from "@/data/vendor-master-seed";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useApplications } from "@/hooks/use-applications";
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { useInvitations } from "@/hooks/use-invitations";
+import { usePackageInviteFlow } from "@/hooks/use-package-invite-flow";
 import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
 import {
@@ -134,13 +135,6 @@ type VendorTab  = "evaluation" | "documents" | "reviews" | "findings" | "history
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
-function generateToken() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const seg = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `MWQ-${seg(3)}${seg(3)}`;
-}
-
 function addDays(base: Date, days: number): string {
   const d = new Date(base);
   d.setDate(d.getDate() + days);
@@ -182,19 +176,24 @@ function scoreCls(score: number): string {
 export function VendorIntakePage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { projects } = useProjects();
+  const { backendProjects, projects } = useProjects();
   const { vendors: demoVendors } = useDemoVendors();
-  const { primaryPackage } = useProjectPackages(projectId);
-  const { applications, createApplication, updateApplication } = useApplications({
+  const { packages, primaryPackage } = useProjectPackages(projectId);
+  const { applications, updateApplication } = useApplications({
     packageId: primaryPackage?.id,
   });
   const {
     invitations: backendInvitations,
-    createInvitation,
     updateInvitation,
   } = useInvitations({
     projectId,
     packageId: primaryPackage?.id,
+  });
+  const { inviteVendorToPackage } = usePackageInviteFlow({
+    applications,
+    invitations: backendInvitations,
+    projects: backendProjects,
+    packages,
   });
 
   const [projectTab, setProjectTab]     = useState<ProjectTab>("applicants");
@@ -320,28 +319,6 @@ export function VendorIntakePage() {
     toast.info("Decision undone — moved back to Pending Review");
   }
 
-  async function addVendorsToPackage(newLinks: PackageVendorLink[]) {
-    if (!primaryPackage) return;
-    await Promise.all(
-      newLinks.map((link) =>
-        createApplication({
-          id: link.id,
-          vendorId: link.vendorId,
-          projectId: project.id,
-          packageId: primaryPackage.id,
-          applicationStatus: link.appStatus,
-          qualificationStatus: link.qualStatus,
-          source: link.source,
-        }),
-      ),
-    );
-    setProjectTab("applicants");
-    setSelectedCat("");
-    setSelected(newLinks[0]?.id ?? null);
-    setVendorTab("evaluation");
-    toast.success(`${newLinks.length} vendor${newLinks.length !== 1 ? "s" : ""} added to package`);
-  }
-
   function selectCat(cat: string) {
     setSelectedCat(cat);
     setSelected(null);
@@ -446,23 +423,7 @@ export function VendorIntakePage() {
       {projectTab === "invitations" && (
         <InvitationsPanel
           invitations={invitations}
-          projectName={project.name}
-          packageName={project.packageName}
-          onCreateInvitation={async (invitation) => {
-            if (!primaryPackage) return;
-            await createInvitation({
-              id: invitation.id,
-              projectId: project.id,
-              packageId: primaryPackage.id,
-              companyName: invitation.companyName,
-              contactName: invitation.contactPerson,
-              contactEmail: invitation.email,
-              category: invitation.tradeCategory,
-              invitedAt: invitation.invitedAt,
-              expiresAt: invitation.expiresAt,
-              status: "Invited",
-            });
-          }}
+          onAddVendor={() => setAddOpen(true)}
           onResendInvitation={async (invitationId) => {
             await updateInvitation(invitationId, {
               status: "Invited",
@@ -652,42 +613,31 @@ export function VendorIntakePage() {
       {/* Add Vendors modal */}
       {addOpen && (
         <AddVendorsModal
-          projectId={project.id}
-          projectName={project.name}
+          applications={applications}
           existingVendorIds={new Set(pkgLinks.map(l => l.vendorId))}
-          onAdd={addVendorsToPackage}
-          onInvite={async (inv, link) => {
-            if (!primaryPackage) return;
-            await Promise.all([
-              createInvitation({
-                id: inv.id,
-                projectId: project.id,
-                packageId: primaryPackage.id,
-                companyName: inv.companyName,
-                contactName: inv.contactPerson,
-                contactEmail: inv.email,
-                category: inv.tradeCategory,
-                invitedAt: inv.invitedAt,
-                expiresAt: inv.expiresAt,
-                status: "Invited",
-              }),
-              createApplication({
-                id: link.id,
-                vendorId: link.vendorId,
-                projectId: project.id,
-                packageId: primaryPackage.id,
-                applicationStatus: "Invited",
-                qualificationStatus: "Not Started",
-                source: link.source,
-              }),
-            ]);
+          fixedPackageId={primaryPackage?.id}
+          fixedProjectId={project.id}
+          onInvite={async ({ vendor, projectId: nextProjectId, packageId, note }) => {
+            const result = await inviteVendorToPackage({
+              vendor,
+              projectId: nextProjectId,
+              packageId,
+              note,
+            });
             setProjectTab("applicants");
             setSelectedCat("");
-            setSelected(link.id);
+            setSelected(result.application.id);
             setVendorTab("evaluation");
-            toast.success(`Invitation sent to ${inv.companyName}`);
+            toast.success(`Invitation sent to ${vendor.name}`, {
+              description: `Package: ${result.package.name}`,
+            });
+            setAddOpen(false);
           }}
           onClose={() => setAddOpen(false)}
+          packages={packages}
+          projects={backendProjects}
+          title="Add Vendor to Package"
+          vendors={vmVendors}
         />
       )}
     </div>
@@ -1368,262 +1318,46 @@ function ShortlistPanel({
 /* ── Add Vendors Modal ───────────────────────────────────────────────────── */
 
 function AddVendorsModal({
-  projectId, projectName, existingVendorIds, onAdd, onInvite, onClose,
+  applications,
+  existingVendorIds,
+  fixedPackageId,
+  fixedProjectId,
+  onClose,
+  onInvite,
+  packages,
+  projects,
+  title,
+  vendors,
 }: {
-  projectId: string;
-  projectName: string;
+  applications: ReturnType<typeof useApplications>["applications"];
   existingVendorIds: Set<string>;
-  onAdd: (links: PackageVendorLink[]) => Promise<void>;
-  onInvite: (inv: VendorInvitation, link: PackageVendorLink) => Promise<void>;
+  fixedPackageId?: string;
+  fixedProjectId?: string;
   onClose: () => void;
+  onInvite: (input: {
+    vendor: VMVendor;
+    projectId: string;
+    packageId: string;
+    note?: string;
+  }) => Promise<void>;
+  packages: ReturnType<typeof useProjectPackages>["packages"];
+  projects: ReturnType<typeof useProjects>["backendProjects"];
+  title: string;
+  vendors: VMVendor[];
 }) {
-  const [modalTab, setModalTab] = useState<"vm" | "invite">("vm");
-  const [search, setSearch]     = useState("");
-  const [catFilter, setCat]     = useState("All");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  const [form, setForm] = useState({ companyName: "", contactPerson: "", email: "", tradeCategory: "", message: "" });
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const allCategories = [...new Set(vmVendors.flatMap(v => v.tradeCategories))].sort();
-
-  const available = vmVendors.filter(v => {
-    if (existingVendorIds.has(v.id)) return false;
-    const q = search.toLowerCase();
-    if (q && !v.name.toLowerCase().includes(q) && !v.city.toLowerCase().includes(q)) return false;
-    if (catFilter !== "All" && !v.tradeCategories.includes(catFilter)) return false;
-    return true;
-  });
-
-  function toggleSelect(id: string) {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
-  async function handleAddSelected() {
-    const now = today();
-    const newLinks: PackageVendorLink[] = [...selectedIds].map(vendorId => ({
-      id: `pvl-${Date.now()}-${vendorId}`,
-      vendorId,
-      projectId,
-      appStatus: "Invited" as PkgAppStatus,
-      qualStatus: "Not Started" as PkgQualStatus,
-      addedDate: now,
-      lastUpdated: now,
-      source: "added_from_vm" as const,
-    }));
-    await onAdd(newLinks);
-    onClose();
-  }
-
-  const possibleDuplicate = form.email.includes("@")
-    ? vmVendors.find(v => v.contactEmail.toLowerCase() === form.email.toLowerCase())
-    : null;
-
-  async function handleInviteSend() {
-    if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
-      setFormError("Company name, contact person, email, and trade category are required.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setFormError("Please enter a valid email address.");
-      return;
-    }
-    const token = generateToken();
-    const now = new Date();
-    const inv: VendorInvitation = {
-      id: `inv-${Date.now()}`,
-      token,
-      companyName: form.companyName.trim(),
-      contactPerson: form.contactPerson.trim(),
-      email: form.email.trim(),
-      tradeCategory: form.tradeCategory,
-      projectContext: projectName,
-      status: "invited",
-      invitedAt: today(),
-      expiresAt: addDays(now, 30),
-      invitedBy: "FA",
-      registrationLink: `https://portal.mawthuq.app/register/${token}`,
-    };
-    const link: PackageVendorLink = {
-      id: `pvl-${Date.now()}`,
-      vendorId: `vmv-new-${Date.now()}`,
-      projectId,
-      appStatus: "Invited",
-      qualStatus: "Not Started",
-      addedDate: today(),
-      lastUpdated: today(),
-      source: "invited",
-    };
-    await onInvite(inv, link);
-    onClose();
-  }
-
-  const selectCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
-  const inputCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40";
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex w-full max-w-2xl flex-col rounded-2xl border border-border bg-card shadow-2xl" style={{ maxHeight: "90vh" }}>
-        {/* Modal header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4 shrink-0">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Add Vendors to Package</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{projectName}</p>
-          </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Modal tab bar */}
-        <div className="flex border-b border-border px-6 shrink-0">
-          {([
-            { id: "vm" as const, label: "Select from Vendor Master", icon: Building2 },
-            { id: "invite" as const, label: "Invite New Vendor", icon: Mail },
-          ]).map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setModalTab(id)}
-              className={cn(
-                "-mb-px flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium transition-colors",
-                modalTab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Modal body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {modalTab === "vm" ? (
-            <>
-              {/* Filters */}
-              <div className="flex flex-wrap gap-2">
-                <div className="relative flex-1 min-w-[160px]">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search vendor…" className={cn(inputCls, "pl-9")} />
-                </div>
-                <select value={catFilter} onChange={e => setCat(e.target.value)} className={selectCls}>
-                  <option value="All">All Categories</option>
-                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-
-              {/* Vendor list */}
-              <div className="space-y-1.5">
-                {available.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">No vendors available to add.</p>
-                ) : available.map(vendor => {
-                  const isSelected = selectedIds.has(vendor.id);
-                  const isSuspended = vendor.globalStatus === "Suspended" || vendor.globalStatus === "Blacklisted";
-                  const hasDocIssue = vendor.docHealth === "Expired" || vendor.docHealth === "Missing";
-                  return (
-                    <div
-                      key={vendor.id}
-                      onClick={() => !isSuspended && toggleSelect(vendor.id)}
-                      className={cn(
-                        "flex items-start gap-3 rounded-lg border p-3 transition-colors",
-                        isSuspended
-                          ? "border-border opacity-50 cursor-not-allowed bg-muted/10"
-                          : isSelected
-                          ? "border-primary/40 bg-primary/[0.03] cursor-pointer"
-                          : "border-border bg-card hover:border-primary/20 cursor-pointer",
-                      )}
-                    >
-                      <div className="mt-0.5">
-                        <div className={cn(
-                          "flex h-4 w-4 items-center justify-center rounded border",
-                          isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background",
-                          isSuspended && "opacity-40",
-                        )}>
-                          {isSelected && <Check className="h-2.5 w-2.5" />}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium text-foreground">{vendor.name}</p>
-                          <span className={`status-pill text-[10px] ${globalStatusCls[vendor.globalStatus]}`}>
-                            {vendor.globalStatus}
-                          </span>
-                          {hasDocIssue && !isSuspended && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-medium text-destructive">
-                              <AlertTriangle className="h-3 w-3" />
-                              {vendor.docHealth} docs
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">{vendor.city} · {vendor.tradeCategories.slice(0, 2).join(", ")}</p>
-                        {isSuspended && (
-                          <p className="mt-0.5 text-[10px] text-destructive">Cannot add — vendor is {vendor.globalStatus.toLowerCase()}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            /* Invite new vendor form */
-            <div className="space-y-4">
-              {possibleDuplicate && (
-                <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>A vendor with this email may already exist in Vendor Master: <strong>{possibleDuplicate.name}</strong>. Consider adding them from the Vendor Master tab instead.</span>
-                </div>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <InviteField label="Company Name" required>
-                  <input type="text" placeholder="e.g. Al-Rajhi Contracting Co." value={form.companyName}
-                    onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))} className={inputCls} />
-                </InviteField>
-                <InviteField label="Contact Person" required>
-                  <input type="text" placeholder="e.g. Khalid Al-Otaibi" value={form.contactPerson}
-                    onChange={e => setForm(f => ({ ...f, contactPerson: e.target.value }))} className={inputCls} />
-                </InviteField>
-                <InviteField label="Email Address" required>
-                  <input type="email" placeholder="e.g. contact@company.sa" value={form.email}
-                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inputCls} />
-                </InviteField>
-                <InviteField label="Trade Category" required>
-                  <select value={form.tradeCategory} onChange={e => setForm(f => ({ ...f, tradeCategory: e.target.value }))} className={inputCls}>
-                    <option value="">Select a category…</option>
-                    {tradeCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </InviteField>
-                <InviteField label="Message to Vendor" className="sm:col-span-2">
-                  <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    rows={2} placeholder="Optional message for the invitation email…" className={cn(inputCls, "resize-none")} />
-                </InviteField>
-              </div>
-              {formError && <p className="text-sm text-destructive">{formError}</p>}
-            </div>
-          )}
-        </div>
-
-        {/* Modal footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4 shrink-0">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          {modalTab === "vm" ? (
-            <Button size="sm" disabled={selectedIds.size === 0} onClick={handleAddSelected} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add {selectedIds.size > 0 ? `${selectedIds.size} Vendor${selectedIds.size !== 1 ? "s" : ""}` : "Selected"}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={handleInviteSend} className="gap-2">
-              <Send className="h-4 w-4" />
-              Send Package Invitation
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+    <InviteVendorToPackageModal
+      title={title}
+      vendors={vendors}
+      projects={projects}
+      packages={packages}
+      applications={applications}
+      existingVendorIds={existingVendorIds}
+      fixedProjectId={fixedProjectId}
+      fixedPackageId={fixedPackageId}
+      onClose={onClose}
+      onInvite={onInvite}
+    />
   );
 }
 
@@ -1631,63 +1365,21 @@ function AddVendorsModal({
 
 function InvitationsPanel({
   invitations,
-  projectName,
-  packageName,
-  onCreateInvitation,
+  onAddVendor,
   onResendInvitation,
 }: {
   invitations: VendorInvitation[];
-  projectName: string;
-  packageName: string;
-  onCreateInvitation: (invitation: VendorInvitation) => Promise<void>;
+  onAddVendor: () => void;
   onResendInvitation: (invitationId: string) => Promise<void>;
 }) {
-  const [showForm, setShowForm]     = useState(false);
   const [copiedId, setCopiedId]     = useState<string | null>(null);
   const [statusFilter, setFilter]   = useState<InvitationStatus | "all">("all");
   const [searchQuery, setSearch]    = useState("");
-  const [form, setForm] = useState({ companyName: "", contactPerson: "", email: "", tradeCategory: "", projectContext: "" });
-  const [formError, setFormError]   = useState<string | null>(null);
 
   const q = searchQuery.toLowerCase().trim();
   const visible = invitations
     .filter(i => statusFilter === "all" || i.status === statusFilter)
     .filter(i => !q || i.companyName.toLowerCase().includes(q) || i.contactPerson.toLowerCase().includes(q) || i.email.toLowerCase().includes(q));
-
-  async function handleSend() {
-    if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
-      setFormError("Company name, contact person, email, and trade category are required.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setFormError("Please enter a valid email address.");
-      return;
-    }
-    const token = generateToken();
-    const inv: VendorInvitation = {
-      id: `inv-${Date.now()}`,
-      token,
-      companyName: form.companyName.trim(),
-      contactPerson: form.contactPerson.trim(),
-      email: form.email.trim(),
-      tradeCategory: form.tradeCategory,
-      projectContext: form.projectContext.trim() || `${projectName} — ${packageName}`,
-      status: "invited",
-      invitedAt: today(),
-      expiresAt: addDays(new Date(), 30),
-      invitedBy: "FA",
-      registrationLink: `https://portal.mawthuq.app/register/${token}`,
-    };
-    try {
-      await onCreateInvitation(inv);
-      setForm({ companyName: "", contactPerson: "", email: "", tradeCategory: "", projectContext: "" });
-      setFormError(null);
-      toast.success(`Invitation sent to ${inv.email}`, { description: `${inv.companyName} · expires in 30 days` });
-      setShowForm(false);
-    } catch {
-      setFormError("Could not send invitation right now.");
-    }
-  }
 
   function copyLink(inv: VendorInvitation) {
     void navigator.clipboard.writeText(inv.registrationLink);
@@ -1705,62 +1397,16 @@ function InvitationsPanel({
     }
   }
 
-  const inputCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20";
-
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-foreground">Vendor Invitations</p>
-        <button type="button" onClick={() => { setShowForm(v => !v); setFormError(null); }}
+        <button type="button" onClick={onAddVendor}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-          {showForm ? <ChevronUp className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showForm ? "Cancel" : "Invite Vendor"}
+          <Plus className="h-4 w-4" />
+          Invite from Vendor Master
         </button>
       </div>
-
-      {showForm && (
-        <Card className="border-primary/30 bg-primary/[0.03]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Send className="h-4 w-4 text-accent" />New vendor invitation</CardTitle>
-            <CardDescription>A unique registration link will be generated and sent to the vendor's contact.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <InviteField label="Company Name" required>
-                <input type="text" placeholder="e.g. Al-Rajhi Contracting Co." value={form.companyName}
-                  onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))} className={inputCls} />
-              </InviteField>
-              <InviteField label="Contact Person" required>
-                <input type="text" placeholder="e.g. Khalid Al-Otaibi" value={form.contactPerson}
-                  onChange={e => setForm(f => ({ ...f, contactPerson: e.target.value }))} className={inputCls} />
-              </InviteField>
-              <InviteField label="Email Address" required>
-                <input type="email" placeholder="e.g. contact@company.sa" value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inputCls} />
-              </InviteField>
-              <InviteField label="Trade Category" required>
-                <select value={form.tradeCategory} onChange={e => setForm(f => ({ ...f, tradeCategory: e.target.value }))} className={inputCls}>
-                  <option value="">Select a category…</option>
-                  {tradeCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </InviteField>
-              <InviteField label="Package Context" className="sm:col-span-2">
-                <input type="text" value={form.projectContext}
-                  onChange={e => setForm(f => ({ ...f, projectContext: e.target.value }))}
-                  placeholder={`${projectName} — ${packageName}`}
-                  className={inputCls} />
-              </InviteField>
-            </div>
-            {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
-            <div className="mt-6 flex items-center gap-3">
-              <Button onClick={handleSend} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                <Send className="h-4 w-4" /> Send Invitation
-              </Button>
-              <p className="text-xs text-muted-foreground">Link expires in <span className="font-semibold">30 days</span></p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="flex flex-wrap gap-2">
         {(["all", "invited", "opened", "started", "submitted", "expired", "bounced", "declined"] as const).map(s => {
@@ -2056,17 +1702,6 @@ function SettingsRow({ label, value, children }: { label: string; value?: string
     <div className="flex items-start justify-between gap-3">
       <dt className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">{label}</dt>
       <dd className="text-right text-sm text-foreground">{children ?? value ?? "—"}</dd>
-    </div>
-  );
-}
-
-function InviteField({ label, required, children, className }: { label: string; required?: boolean; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("space-y-1.5", className)}>
-      <label className="block text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-        {label}{required && <span className="ml-0.5 text-destructive">*</span>}
-      </label>
-      {children}
     </div>
   );
 }

@@ -215,7 +215,7 @@ export function DashboardPage() {
         description="Monitor contractor readiness, evidence quality, and decision velocity before tender invitation."
         action={
           <Link
-            to="/vendor-invitations?new=1"
+            to="/vendors?invite=1"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />

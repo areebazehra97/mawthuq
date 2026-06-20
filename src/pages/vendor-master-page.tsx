@@ -1,14 +1,15 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Activity, AlertCircle, AlertTriangle, Building2, ChevronDown, ChevronUp,
-  Eye, Mail, Package, Plus, Search, Shield, Users, X, XCircle,
+  Activity, AlertCircle, Building2, ChevronDown, ChevronUp,
+  Eye, Mail, Package, Plus, Search, Shield, Users,
 } from "lucide-react";
 import { MetricCard } from "@/components/metric-card";
-import { Button } from "@/components/ui/button";
+import { InviteVendorToPackageModal } from "@/components/invite-vendor-to-package-modal";
 import { useApplications } from "@/hooks/use-applications";
 import { useInvitations } from "@/hooks/use-invitations";
+import { usePackageInviteFlow } from "@/hooks/use-package-invite-flow";
 import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
 import { cn } from "@/lib/utils";
@@ -72,170 +73,6 @@ function relativeDate(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${Math.floor(days / 365)}y ago`;
-}
-
-// ── Invite Modal ──────────────────────────────────────────────────────────────
-
-type InviteForm = { projectId: string; packageId: string; note: string };
-
-function InviteModal({
-  vendor,
-  projects,
-  packages,
-  applications,
-  onClose,
-  onSend,
-}: {
-  vendor: VMVendor;
-  projects: BackendProject[];
-  packages: BackendPackage[];
-  applications: VendorPackageApplication[];
-  onClose: () => void;
-  onSend: (vendor: VMVendor, projectId: string, packageId: string, note: string) => void;
-}) {
-  const [form, setForm] = useState<InviteForm>({ projectId: "", packageId: "", note: "" });
-
-  const openProjects = projects.filter(p => p.status === "Active" || p.status === "Tendering");
-  const pkgsForProject = packages.filter(
-    pkg => pkg.projectId === form.projectId && pkg.status !== "Awarded" && pkg.status !== "Closed",
-  );
-  const selectedPkg = packages.find(p => p.id === form.packageId);
-
-  const alreadyApplied = form.packageId !== "" && applications.some(
-    a => a.vendorId === vendor.id && a.packageId === form.packageId,
-  );
-  const categoryMismatch =
-    selectedPkg !== undefined &&
-    !vendor.tradeCategories.includes(selectedPkg.category);
-  const isBlocked  = vendor.globalStatus === "Suspended" || vendor.globalStatus === "Blacklisted";
-  const hasDocIssue = vendor.docHealth === "Expired" || vendor.docHealth === "Missing";
-  const canSend = form.projectId !== "" && form.packageId !== "" && !isBlocked && !alreadyApplied;
-
-  const selectCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Header */}
-        <div className="flex items-start justify-between border-b border-border px-6 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Invite Vendor to Package</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{vendor.name}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4 px-6 py-5">
-          {/* Vendor chips */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`status-pill ${globalStatusCls[vendor.globalStatus]}`}>
-              {vendor.globalStatus}
-            </span>
-            {vendor.tradeCategories.slice(0, 3).map(c => (
-              <span key={c} className="chip text-[10px]">{c}</span>
-            ))}
-          </div>
-
-          {/* Blocked banner */}
-          {isBlocked && (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5 text-sm text-destructive">
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                This vendor is <strong>{vendor.globalStatus.toLowerCase()}</strong> and cannot be invited.
-              </span>
-            </div>
-          )}
-
-          {/* Project */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Project</label>
-            <select
-              value={form.projectId}
-              onChange={e => setForm(f => ({ ...f, projectId: e.target.value, packageId: "" }))}
-              className={selectCls}
-            >
-              <option value="">Select a project…</option>
-              {openProjects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Package */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">Package</label>
-            <select
-              value={form.packageId}
-              onChange={e => setForm(f => ({ ...f, packageId: e.target.value }))}
-              disabled={form.projectId === "" || pkgsForProject.length === 0}
-              className={selectCls}
-            >
-              <option value="">
-                {form.projectId === ""
-                  ? "Select a project first…"
-                  : pkgsForProject.length === 0
-                  ? "No open packages for this project"
-                  : "Select a package…"}
-              </option>
-              {pkgsForProject.map(p => (
-                <option key={p.id} value={p.id}>{p.name} · {p.valueBand}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Eligibility warnings */}
-          {alreadyApplied && (
-            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>This vendor already has an application for the selected package.</span>
-            </div>
-          )}
-          {!alreadyApplied && categoryMismatch && (
-            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Vendor trade categories don't match this package's scope. Proceed with caution.</span>
-            </div>
-          )}
-          {!isBlocked && hasDocIssue && (
-            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm text-warning-foreground">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Vendor has <strong>{vendor.docHealth.toLowerCase()}</strong> documents — they must resolve this before qualifying.
-              </span>
-            </div>
-          )}
-
-          {/* Note */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Message <span className="font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <textarea
-              value={form.note}
-              onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-              rows={3}
-              placeholder="Add a note for the vendor invitation email…"
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" disabled={!canSend} onClick={() => onSend(vendor, form.projectId, form.packageId, form.note)} className="gap-2">
-            <Mail className="h-4 w-4" />
-            Send Invitation
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ── Vendor Row ────────────────────────────────────────────────────────────────
@@ -413,10 +250,11 @@ function VendorRow({
 const allCategories = Array.from(new Set(vmVendors.flatMap(v => v.tradeCategories))).sort();
 
 export function VendorMasterPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { backendProjects } = useProjects();
   const { packages } = useProjectPackages();
-  const { applications, createApplication } = useApplications();
-  const { createInvitation } = useInvitations();
+  const { applications } = useApplications();
+  const { invitations } = useInvitations();
   const [search,       setSearch]  = useState("");
   const [statusFilter, setStatus]  = useState<VendorGlobalStatus | "All">("All");
   const [catFilter,    setCat]     = useState("All");
@@ -424,6 +262,12 @@ export function VendorMasterPage() {
   const [docFilter,    setDoc]     = useState<DocHealth | "All">("All");
   const [expandedId,   setExpand]  = useState<string | null>(null);
   const [inviteVendor, setInvite]  = useState<VMVendor | null>(null);
+  const { inviteVendorToPackage } = usePackageInviteFlow({
+    applications,
+    invitations,
+    projects: backendProjects,
+    packages,
+  });
 
   const enrichedVendors = useMemo(() => vmVendors.map((vendor) => {
     const vendorApps = applications.filter((app) => app.vendorId === vendor.id);
@@ -472,32 +316,16 @@ export function VendorMasterPage() {
   const docIssues   = enrichedVendors.filter(v => v.docHealth === "Expired" || v.docHealth === "Missing").length;
   const highRisk    = enrichedVendors.filter(v => v.riskLevel === "High" || v.riskLevel === "Critical").length;
 
-  function handleSend(vendor: VMVendor, projectId: string, packageId: string) {
-    const pkg = packages.find(p => p.id === packageId);
-    void Promise.all([
-      createInvitation({
-        vendorId: vendor.id,
-        projectId,
-        packageId,
-        companyName: vendor.name,
-        contactName: vendor.contactName,
-        contactEmail: vendor.contactEmail,
-        category: pkg?.category ?? vendor.tradeCategories[0],
-        status: "Invited",
-      }),
-      createApplication({
-        vendorId: vendor.id,
-        projectId,
-        packageId,
-        applicationStatus: "Invited",
-        qualificationStatus: "Not Started",
-        source: "invited",
-      }),
-    ]).then(() => {
-      toast.success(`Invitation sent to ${vendor.name}`, { description: `Package: ${pkg?.name}` });
-      setInvite(null);
-    });
-  }
+  useEffect(() => {
+    if (searchParams.get("invite") !== "1") return;
+    const vendorId = searchParams.get("vendorId");
+    if (vendorId) {
+      const vendor = enrichedVendors.find((item) => item.id === vendorId) ?? null;
+      setInvite(vendor);
+      return;
+    }
+    setInvite(null);
+  }, [enrichedVendors, searchParams]);
 
   const sel = "rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -514,7 +342,10 @@ export function VendorMasterPage() {
           </p>
         </div>
         <button
-          onClick={() => setInvite(enrichedVendors[0] ?? null)}
+          onClick={() => {
+            setInvite(null);
+            setSearchParams({ invite: "1" });
+          }}
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
@@ -622,13 +453,46 @@ export function VendorMasterPage() {
 
       {/* Invite modal */}
       {inviteVendor && (
-        <InviteModal
-          vendor={inviteVendor}
+        <InviteVendorToPackageModal
+          title="Invite Vendor to Package"
+          vendors={enrichedVendors}
           projects={backendProjects}
           packages={packages}
           applications={applications}
-          onClose={() => setInvite(null)}
-          onSend={handleSend}
+          initialVendor={inviteVendor}
+          fixedProjectId={searchParams.get("projectId") ?? undefined}
+          fixedPackageId={searchParams.get("packageId") ?? undefined}
+          onClose={() => {
+            setInvite(null);
+            setSearchParams({});
+          }}
+          onInvite={async ({ vendor, projectId, packageId, note }) => {
+            const result = await inviteVendorToPackage({ vendor, projectId, packageId, note });
+            toast.success(`Invitation sent to ${vendor.name}`, {
+              description: `Package: ${result.package.name}`,
+            });
+            setInvite(null);
+            setSearchParams({});
+          }}
+        />
+      )}
+      {!inviteVendor && searchParams.get("invite") === "1" && (
+        <InviteVendorToPackageModal
+          title="Invite Vendor to Package"
+          vendors={enrichedVendors}
+          projects={backendProjects}
+          packages={packages}
+          applications={applications}
+          fixedProjectId={searchParams.get("projectId") ?? undefined}
+          fixedPackageId={searchParams.get("packageId") ?? undefined}
+          onClose={() => setSearchParams({})}
+          onInvite={async ({ vendor, projectId, packageId, note }) => {
+            const result = await inviteVendorToPackage({ vendor, projectId, packageId, note });
+            toast.success(`Invitation sent to ${vendor.name}`, {
+              description: `Package: ${result.package.name}`,
+            });
+            setSearchParams({});
+          }}
         />
       )}
     </div>
