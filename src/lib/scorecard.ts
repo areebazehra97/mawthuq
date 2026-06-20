@@ -7,7 +7,7 @@ import type {
   VendorRecord,
   VendorScorecard,
   VendorStatus,
-} from "@/types";
+} from "../types";
 
 const REVIEW_DATE = new Date("2026-06-16T00:00:00Z");
 

@@ -18,8 +18,8 @@ import type {
   VendorDocument,
   VendorInvitation,
   VendorRecord,
-} from "@/types";
-import { seededPkgLinks } from "@/data/package-applications";
+} from "../types";
+import { seededPkgLinks } from "./package-applications";
 
 export const vendorStorageKey = "mawthuq-demo-vendors";
 export const packageConfigStorageKey = "mawthuq-package-config";
