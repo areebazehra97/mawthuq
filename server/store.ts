@@ -43,10 +43,12 @@ export async function readState(): Promise<BackendState> {
       return normalizeState(data.state_json as Partial<BackendState>);
     }
 
+    // First run: seed Supabase and return the seeded state
     await supabase.from("mawthuq_app_state").upsert({
       id: "default",
       state_json: seededBackendState,
     });
+    return normalizeState(seededBackendState);
   }
 
   return readLocalState();
