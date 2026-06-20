@@ -3,13 +3,13 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Activity, AlertCircle, AlertTriangle, ArrowLeft, Award, Briefcase,
   Building2, Calendar, Check, CheckCircle2, ChevronDown, ChevronUp,
-  Clock, Copy, FileText, FolderOpen, Hash, Mail, MapPin, Phone, Plus,
-  RefreshCw, Search, Send, Settings, Shield, Star, Users, X, XCircle,
+  Clock, Copy, FileText, FolderOpen, Mail, MapPin, Plus,
+  RefreshCw, Search, Send, Settings, Shield, Star, Users, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { seededInvitations, tradeCategories } from "@/data/seed";
 import { seededPkgLinks, getReadinessStatus, type PackageVendorLink, type PkgAppStatus, type PkgQualStatus, type PkgReadinessStatus } from "@/data/package-applications";
-import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendor, type VendorGlobalStatus, type DocHealth } from "@/data/vendor-master-seed";
+import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendor, type VendorGlobalStatus } from "@/data/vendor-master-seed";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/hooks/use-projects";
