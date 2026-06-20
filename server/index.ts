@@ -689,6 +689,62 @@ app.get("/api/invitations/token/:token", async (req, res) => {
   res.json(invitation);
 });
 
+// Single-step: create invitation + send email atomically (avoids split-brain 404)
+app.post("/api/invitations/invite-and-send", async (req, res) => {
+  try {
+    const state = await readState();
+    const invitation = buildInvitation(req.body as Record<string, unknown>);
+
+    // Dedupe by email (same logic as POST /api/invitations)
+    const existing = state.invitations.find(
+      (inv) =>
+        inv.contactEmail.toLowerCase() === invitation.contactEmail.toLowerCase() &&
+        inv.status !== "Expired" &&
+        inv.status !== "Bounced" &&
+        inv.status !== "Declined" &&
+        inv.packageId === undefined,
+    );
+    const saved = existing ?? invitation;
+    if (!existing) {
+      state.invitations = [invitation, ...state.invitations];
+    }
+
+    const registrationUrl = `${serverConfig.appUrl}/register/${saved.id}`;
+
+    if (!hasEmailConfig()) {
+      await writeState(state);
+      res.status(503).json({ error: "Email service not configured. Set RESEND_API_KEY.", registrationUrl });
+      return;
+    }
+
+    const resend = new Resend(serverConfig.resendApiKey);
+    const { error: emailError } = await resend.emails.send({
+      from: serverConfig.fromEmail,
+      to: [saved.contactEmail],
+      subject: `Invitation to Pre-qualify — ${saved.category ?? "Contractor Registration"}`,
+      html: buildInvitationEmail({
+        contactName: saved.contactName,
+        companyName: saved.companyName,
+        projectName: saved.note ?? saved.category ?? "the project",
+        registrationUrl,
+        expiresAt: saved.expiresAt ?? "",
+      }),
+    });
+
+    if (emailError) {
+      // Still save the invitation even if email fails
+      await writeState(state);
+      res.status(500).json({ error: emailError.message, registrationUrl });
+      return;
+    }
+
+    await writeState(state);
+    res.status(201).json({ ok: true, registrationUrl, invitation: saved });
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Failed to create invitation" });
+  }
+});
+
 app.post("/api/invitations/:invitationId/send-email", async (req, res) => {
   const state = await readState();
   const invitation = state.invitations.find((inv) => inv.id === req.params.invitationId);

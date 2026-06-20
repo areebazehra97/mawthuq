@@ -56,7 +56,7 @@ function today() {
 export function VendorInvitationsPage() {
   const { backendProjects } = useProjects();
   const { packages } = useProjectPackages();
-  const { invitations, createInvitation, updateInvitation } = useInvitations();
+  const { invitations, refresh, updateInvitation } = useInvitations();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | "all">("all");
@@ -135,40 +135,39 @@ export function VendorInvitationsPage() {
 
     setInviteSubmitting(true);
     try {
-      const id = `inv-${Date.now()}`;
       const now = new Date();
-      await createInvitation({
-        id,
-        companyName: companyName.trim(),
-        contactName: contactName.trim(),
-        contactEmail: contactEmail.trim(),
-        category: tradeCategory,
-        status: "Invited",
-        invitedAt: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        expiresAt: addDays(now, 30),
+      const res = await fetch("/api/invitations/invite-and-send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: `inv-${Date.now()}`,
+          companyName: companyName.trim(),
+          contactName: contactName.trim(),
+          contactEmail: contactEmail.trim(),
+          category: tradeCategory,
+          status: "Invited",
+          invitedAt: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+          expiresAt: addDays(now, 30),
+        }),
       });
+      const data = await res.json() as { ok?: boolean; registrationUrl?: string; error?: string };
 
-      // Send email immediately
-      const res = await fetch(`/api/invitations/${id}/send-email`, { method: "POST" });
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.registrationUrl) {
-          void navigator.clipboard.writeText(data.registrationUrl);
-          toast.success(`Invitation created for ${companyName}`, {
-            description: "Email not configured — registration link copied to clipboard.",
-          });
-        } else {
-          toast.success(`Invitation created for ${companyName}`, {
-            description: "Could not send email automatically. Use the Send button.",
-          });
-        }
+      if (res.status === 503 && data.registrationUrl) {
+        // Email not configured — copy link so admin can share manually
+        void navigator.clipboard.writeText(data.registrationUrl);
+        toast.success(`Invitation created for ${companyName}`, {
+          description: "Email not configured — registration link copied to clipboard.",
+        });
+      } else if (!res.ok) {
+        toast.error("Failed to send invitation", { description: data.error });
+        return;
       } else {
         toast.success(`Invitation sent to ${contactEmail}`, {
           description: `${companyName} · link expires in 30 days`,
         });
       }
 
+      await refresh();
       setInviteForm({ companyName: "", contactName: "", contactEmail: "", tradeCategory: "" });
       setShowInviteForm(false);
     } catch {
