@@ -47,6 +47,16 @@ export interface VendorRecord {
   reviewItems: ReviewItem[];
   timeline: TimelineEvent[];
   summary: string;
+  // Set when vendor self-registers via the portal
+  isNewRegistration?: boolean;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  country?: string;
+  crNumber?: string;
+  vatNumber?: string;
+  tradeCategories?: string[];
+  registrationToken?: string;
 }
 
 export interface NavigationItem {

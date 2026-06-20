@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { Resend } from "resend";
 import { createExtractionRun } from "./extraction";
 import { clearStoredUploads, saveUpload } from "./file-storage";
 import {
@@ -17,6 +18,7 @@ import {
 import { readState, resetState, writeState } from "./store";
 import { buildVendorScorecard } from "../src/lib/scorecard";
 import { seededBackendState } from "../src/data/seed";
+import { serverConfig, hasEmailConfig } from "./config";
 import type {
   AuditRecord,
   FieldReviewState,
@@ -662,6 +664,261 @@ app.get("/api/demo/state", async (_req, res) => {
     extractionCount: state.extractions.length,
   });
 });
+
+/* ── Vendor self-registration endpoints ────────────────────────────────────── */
+
+app.get("/api/invitations/token/:token", async (req, res) => {
+  const state = await readState();
+  const token = req.params.token.toLowerCase();
+  const invitation = state.invitations.find((inv) => inv.id.toLowerCase() === token);
+  if (!invitation) {
+    res.status(404).json({ error: "Invitation not found" });
+    return;
+  }
+  if (invitation.status === "Expired") {
+    res.status(410).json({ error: "Invitation has expired" });
+    return;
+  }
+  if (invitation.status === "Submitted") {
+    res.status(409).json({ error: "This registration has already been submitted" });
+    return;
+  }
+  res.json(invitation);
+});
+
+app.post("/api/invitations/:invitationId/send-email", async (req, res) => {
+  const state = await readState();
+  const invitation = state.invitations.find((inv) => inv.id === req.params.invitationId);
+  if (!invitation) {
+    res.status(404).json({ error: "Invitation not found" });
+    return;
+  }
+
+  const registrationUrl = `${serverConfig.appUrl}/register/${invitation.id}`;
+
+  if (!hasEmailConfig()) {
+    res.status(503).json({ error: "Email service not configured. Set RESEND_API_KEY.", registrationUrl });
+    return;
+  }
+
+  const resend = new Resend(serverConfig.resendApiKey);
+  const { error } = await resend.emails.send({
+    from: serverConfig.fromEmail,
+    to: [invitation.contactEmail],
+    subject: `Invitation to Pre-qualify — ${invitation.category ?? "Contractor Registration"}`,
+    html: buildInvitationEmail({
+      contactName: invitation.contactName,
+      companyName: invitation.companyName,
+      projectName: invitation.note ?? invitation.category ?? "the project",
+      registrationUrl,
+      expiresAt: invitation.expiresAt ?? "",
+    }),
+  });
+
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return;
+  }
+
+  state.invitations = state.invitations.map((inv) =>
+    inv.id === invitation.id ? { ...inv, lastActivityAt: humanNow() } : inv,
+  );
+  await writeState(state);
+  res.json({ ok: true, registrationUrl });
+});
+
+app.post("/api/registrations/:token", async (req, res) => {
+  const state = await readState();
+  const token = req.params.token.toLowerCase();
+  const invitation = state.invitations.find((inv) => inv.id.toLowerCase() === token);
+
+  if (!invitation) {
+    res.status(404).json({ error: "Invitation not found" });
+    return;
+  }
+  if (invitation.status === "Submitted") {
+    res.status(409).json({ error: "Already submitted" });
+    return;
+  }
+
+  const { profile, documents } = req.body as {
+    profile: {
+      name: string;
+      arabicName?: string;
+      crNumber?: string;
+      vatNumber?: string;
+      city: string;
+      country?: string;
+      contactName: string;
+      contactEmail: string;
+      contactPhone?: string;
+      tradeCategories?: string[];
+    };
+    documents: Array<{
+      fileName: string;
+      mimeType: string;
+      size: number;
+      base64: string;
+      suggestedDocumentType: string;
+    }>;
+  };
+
+  const vendorId = `reg-${Date.now()}`;
+  const now = humanDate();
+  const nowIso = humanNow();
+
+  const newVendor: VendorRecord = {
+    id: vendorId,
+    name: profile.name,
+    arabicName: profile.arabicName ?? "",
+    city: profile.city,
+    classification: profile.tradeCategories?.[0] ?? "General Contracting",
+    primaryDiscipline: profile.tradeCategories?.[0] ?? "General Contracting",
+    status: "CONDITIONAL",
+    reviewStage: "Uploaded",
+    packageHealth: "Awaiting document review",
+    score: 0,
+    documentsSubmitted: documents.length,
+    openIssues: 0,
+    expiryRisk: "Unknown",
+    submittedAt: now,
+    metrics: [],
+    reviewItems: [],
+    timeline: [],
+    summary: `Self-registered via invitation portal on ${now}.`,
+    isNewRegistration: true,
+    contactName: profile.contactName,
+    contactEmail: profile.contactEmail,
+    contactPhone: profile.contactPhone,
+    country: profile.country ?? "Saudi Arabia",
+    crNumber: profile.crNumber,
+    vatNumber: profile.vatNumber,
+    tradeCategories: profile.tradeCategories,
+    registrationToken: invitation.id,
+  };
+
+  state.vendors = [newVendor, ...state.vendors];
+
+  // Upload documents
+  const createdDocuments: VendorDocument[] = [];
+  const createdAudits: AuditRecord[] = [];
+
+  for (const file of documents) {
+    const bytes = Buffer.from(file.base64, "base64");
+    const stored = await saveUpload(vendorId, file.fileName, bytes, file.mimeType);
+    createdDocuments.push({
+      id: `${vendorId}-doc-${Date.now()}-${createdDocuments.length}`,
+      vendorId,
+      name: file.fileName,
+      documentType: file.suggestedDocumentType,
+      uploadDate: now,
+      language: "English",
+      expiryDate: "Pending review",
+      status: "Ambiguous",
+      confidenceScore: 74,
+      sizeLabel: formatSize(file.size),
+      source: "Manual Upload",
+      version: 1,
+      isCurrentVersion: true,
+      mimeType: file.mimeType,
+      contentPreview: `Uploaded via vendor registration portal.`,
+      uploadedBy: profile.contactName,
+      storagePath: stored.storagePath,
+      storageProvider: stored.storageProvider,
+      documentHash: stored.documentHash,
+      supportLevel: "unsupported",
+      lastProcessedAt: null,
+    });
+  }
+
+  createdAudits.push({
+    id: `${vendorId}-register-${Date.now()}`,
+    vendorId,
+    timestamp: nowIso,
+    actor: "System",
+    title: `Vendor self-registered via portal (submitted by ${profile.contactName}).`,
+    detail: `${profile.name} submitted ${documents.length} document(s) via the vendor registration portal.`,
+  });
+
+  state.documents = [...createdDocuments, ...state.documents];
+  state.auditRecords = [...createdAudits, ...state.auditRecords];
+
+  // Mark invitation as submitted
+  state.invitations = state.invitations.map((inv) =>
+    inv.id === invitation.id
+      ? { ...inv, status: "Submitted" as const, vendorId, lastActivityAt: nowIso }
+      : inv,
+  );
+
+  await writeState(state);
+
+  // Trigger AI extraction asynchronously (don't block the response)
+  void createExtractionRun(newVendor, createdDocuments, null).then(async (result) => {
+    const s = await readState();
+    s.documents = [
+      ...s.documents.filter((d) => d.vendorId !== vendorId),
+      ...result.documents,
+    ];
+    s.extractions = upsertByVendor(s.extractions, result.extraction);
+    s.auditRecords = [...result.auditRecords, ...s.auditRecords];
+    s.vendors = s.vendors.map((v) =>
+      v.id === vendorId ? { ...v, reviewStage: "Extracted" as const } : v,
+    );
+    await writeState(s);
+  }).catch(() => { /* extraction errors are non-fatal */ });
+
+  res.status(201).json({ ok: true, vendorId });
+});
+
+/* ── Email template ─────────────────────────────────────────────────────────── */
+
+function buildInvitationEmail({
+  contactName,
+  companyName,
+  projectName,
+  registrationUrl,
+  expiresAt,
+}: {
+  contactName: string;
+  companyName: string;
+  projectName: string;
+  registrationUrl: string;
+  expiresAt: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vendor Invitation</title></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);">
+    <div style="background:#0f172a;padding:28px 32px;">
+      <p style="margin:0;color:#fff;font-size:20px;font-weight:700;letter-spacing:-.3px;">Mawthuq <span style="color:#818cf8;">·</span> ماوثوق</p>
+      <p style="margin:4px 0 0;color:#94a3b8;font-size:12px;">Vendor Pre-Qualification Platform</p>
+    </div>
+    <div style="padding:32px;">
+      <p style="margin:0 0 8px;font-size:15px;color:#64748b;">Dear ${contactName},</p>
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0f172a;line-height:1.3;">
+        You've been invited to pre-qualify for a project
+      </h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#475569;line-height:1.6;">
+        <strong>${companyName}</strong> has been invited to submit a pre-qualification package for
+        <strong>${projectName}</strong>. Please complete your registration by uploading the required
+        documents through the secure link below.
+      </p>
+      <a href="${registrationUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:.1px;">
+        Start Registration →
+      </a>
+      <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">
+        This link expires on <strong>${expiresAt}</strong>. If you did not expect this email, please ignore it.
+      </p>
+      <p style="margin:8px 0 0;font-size:11px;color:#cbd5e1;word-break:break-all;">${registrationUrl}</p>
+    </div>
+    <div style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+      <p style="margin:0;font-size:11px;color:#94a3b8;">Sent by Mawthuq Prequalification Platform · Do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
 
 app.listen(PORT, () => {
   console.log(`Mawthuq API listening on http://localhost:${PORT}`);

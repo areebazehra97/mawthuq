@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Activity, AlertCircle, Building2, ChevronDown, ChevronUp,
-  Eye, Mail, Package, Plus, Search, Shield, Users,
+  Eye, Mail, Package, Plus, Search, Shield, Sparkles, Users,
 } from "lucide-react";
 import { MetricCard } from "@/components/metric-card";
 import { InviteVendorToPackageModal } from "@/components/invite-vendor-to-package-modal";
@@ -12,6 +12,7 @@ import { useInvitations } from "@/hooks/use-invitations";
 import { usePackageInviteFlow } from "@/hooks/use-package-invite-flow";
 import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
+import { useRegisteredVendors } from "@/hooks/use-registered-vendors";
 import { cn } from "@/lib/utils";
 import {
   vmVendors,
@@ -21,7 +22,7 @@ import {
   type ApplicationStatus,
   type PackageQualStatus,
 } from "@/data/vendor-master-seed";
-import type { BackendPackage, BackendProject, VendorPackageApplication } from "@/types";
+import type { BackendPackage, BackendProject, VendorPackageApplication, VendorRecord } from "@/types";
 
 // ── Status style maps ─────────────────────────────────────────────────────────
 
@@ -245,6 +246,45 @@ function VendorRow({
   );
 }
 
+// ── New Registration Row ──────────────────────────────────────────────────────
+
+function NewRegistrationRow({ vendor }: { vendor: VendorRecord }) {
+  return (
+    <div className="flex flex-wrap items-center gap-4 px-5 py-3.5">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+        {vendor.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">{vendor.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {vendor.city}{vendor.country && vendor.country !== "Saudi Arabia" ? `, ${vendor.country}` : ""}
+          {vendor.contactEmail ? ` · ${vendor.contactEmail}` : ""}
+        </p>
+      </div>
+      {vendor.tradeCategories && vendor.tradeCategories.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {vendor.tradeCategories.slice(0, 2).map(c => (
+            <span key={c} className="chip text-[10px]">{c}</span>
+          ))}
+        </div>
+      )}
+      <span className="status-pill text-[10px] bg-info/10 text-info border-info/30">
+        {vendor.reviewStage}
+      </span>
+      <p className="text-xs text-muted-foreground whitespace-nowrap">
+        {vendor.documentsSubmitted} doc{vendor.documentsSubmitted !== 1 ? "s" : ""} uploaded
+      </p>
+      <Link
+        to={`/ai-extraction?vendorId=${vendor.id}`}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        Run AI Extraction
+      </Link>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const allCategories = Array.from(new Set(vmVendors.flatMap(v => v.tradeCategories))).sort();
@@ -255,6 +295,7 @@ export function VendorMasterPage() {
   const { packages } = useProjectPackages();
   const { applications } = useApplications();
   const { invitations } = useInvitations();
+  const { vendors: registeredVendors } = useRegisteredVendors();
   const [search,       setSearch]  = useState("");
   const [statusFilter, setStatus]  = useState<VendorGlobalStatus | "All">("All");
   const [catFilter,    setCat]     = useState("All");
@@ -401,6 +442,25 @@ export function VendorMasterPage() {
           <option value="Missing">Missing</option>
         </select>
       </div>
+
+      {/* New registrations from portal */}
+      {registeredVendors.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-primary/30 bg-primary/[0.03]">
+          <div className="flex items-center gap-2 border-b border-primary/20 bg-primary/5 px-5 py-3">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-sm font-semibold text-primary">New Vendor Registrations</p>
+            <span className="ml-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              {registeredVendors.length}
+            </span>
+            <p className="ml-2 text-xs text-muted-foreground">Self-registered via the vendor portal — ready for AI extraction</p>
+          </div>
+          <div className="divide-y divide-border">
+            {registeredVendors.map((vendor) => (
+              <NewRegistrationRow key={vendor.id} vendor={vendor} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Vendor table */}
       <div className="overflow-x-auto rounded-xl border border-border bg-card">

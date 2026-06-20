@@ -6,6 +6,9 @@ export const serverConfig = {
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseBucket: process.env.SUPABASE_BUCKET ?? "vendor-packages",
   stateStoreDriver: process.env.MAWTHUQ_STATE_DRIVER ?? "local",
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  fromEmail: process.env.FROM_EMAIL ?? "Mawthuq <onboarding@resend.dev>",
+  appUrl: process.env.APP_URL ?? "http://localhost:5173",
 };
 
 export function hasOpenAiConfig() {
@@ -14,4 +17,8 @@ export function hasOpenAiConfig() {
 
 export function hasSupabaseConfig() {
   return Boolean(serverConfig.supabaseUrl && serverConfig.supabaseServiceRoleKey);
+}
+
+export function hasEmailConfig() {
+  return Boolean(serverConfig.resendApiKey);
 }

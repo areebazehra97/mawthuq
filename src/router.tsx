@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { AccountSettingsPage } from "@/pages/account-settings-page";
 import { ActivityLogPage } from "@/pages/activity-log-page";
 import { PageShell } from "@/components/page-shell";
+import { PublicLayout } from "@/components/public-layout";
 import { AiExtractionPage } from "@/pages/ai-extraction-page";
 import { AnalyticsPage } from "@/pages/analytics-page";
 import { ApprovedVendorListPage } from "@/pages/approved-vendor-list-page";
@@ -15,6 +16,7 @@ import { VendorIntakePage } from "@/pages/vendor-intake-page";
 import { VendorInvitationsPage } from "@/pages/vendor-invitations-page";
 import { VendorMasterPage } from "@/pages/vendor-master-page";
 import { VendorProfilePage } from "@/pages/vendor-profile-page";
+import { VendorRegistrationPage } from "@/pages/vendor-registration-page";
 
 export const router = createBrowserRouter([
   {
@@ -35,8 +37,15 @@ export const router = createBrowserRouter([
       { path: "vendor-intake",             element: <ProjectsPage /> },
       { path: "ai-extraction",             element: <AiExtractionPage /> },
       { path: "scorecard",                 element: <ScorecardPage /> },
-      { path: "human-review",              element: <HumanReviewPage /> },
+      { path: "human-review",             element: <HumanReviewPage /> },
       { path: "approved-vendor-list",      element: <ApprovedVendorListPage /> },
+    ],
+  },
+  {
+    path: "/register",
+    element: <PublicLayout />,
+    children: [
+      { path: ":token", element: <VendorRegistrationPage /> },
     ],
   },
 ]);

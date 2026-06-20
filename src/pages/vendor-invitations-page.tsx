@@ -5,9 +5,11 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Loader2,
   Mail,
   RefreshCw,
   Search,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SectionHeader } from "@/components/section-header";
@@ -54,6 +56,7 @@ export function VendorInvitationsPage() {
   const { packages } = useProjectPackages();
   const { invitations, updateInvitation } = useInvitations();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -87,6 +90,33 @@ export function VendorInvitationsPage() {
     void navigator.clipboard.writeText(inv.registrationLink);
     setCopiedId(inv.id);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  async function sendEmail(id: string) {
+    setSendingEmailId(id);
+    try {
+      const res = await fetch(`http://localhost:8787/api/invitations/${id}/send-email`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.registrationUrl) {
+          void navigator.clipboard.writeText(data.registrationUrl);
+          toast.warning("Email service not configured", {
+            description: "Registration link copied to clipboard instead.",
+          });
+        } else {
+          toast.error("Failed to send email", { description: data.error });
+        }
+      } else {
+        const inv = invitationCards.find((i) => i.id === id);
+        toast.success(`Invitation email sent to ${inv?.email ?? "vendor"}`, {
+          description: `${inv?.companyName ?? ""} · link expires in 30 days`,
+        });
+      }
+    } catch {
+      toast.error("Could not send email. Is the server running?");
+    } finally {
+      setSendingEmailId(null);
+    }
   }
 
   async function resend(id: string) {
@@ -196,8 +226,10 @@ export function VendorInvitationsPage() {
                     key={inv.id}
                     inv={inv}
                     copied={copiedId === inv.id}
+                    sendingEmail={sendingEmailId === inv.id}
                     onCopy={() => copyLink(inv)}
                     onResend={() => resend(inv.id)}
+                    onSendEmail={() => sendEmail(inv.id)}
                   />
                 ))}
               </tbody>
@@ -215,13 +247,17 @@ export function VendorInvitationsPage() {
 function InvitationRow({
   inv,
   copied,
+  sendingEmail,
   onCopy,
   onResend,
+  onSendEmail,
 }: {
   inv: VendorInvitation;
   copied: boolean;
+  sendingEmail: boolean;
   onCopy: () => void;
   onResend: () => void;
+  onSendEmail: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = statusConfig[inv.status];
@@ -275,6 +311,18 @@ function InvitationRow({
         {/* Actions */}
         <td className="px-5 py-3.5 text-end" onClick={(e) => e.stopPropagation()}>
           <div className="inline-flex items-center gap-1">
+            {inv.status !== "submitted" && (
+              <button
+                type="button"
+                onClick={onSendEmail}
+                disabled={sendingEmail}
+                title="Send invitation email"
+                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {sendingEmail ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                Send
+              </button>
+            )}
             <button
               type="button"
               onClick={onCopy}
