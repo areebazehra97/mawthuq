@@ -360,7 +360,15 @@ export function VendorIntakePage() {
   function readinessCta(): { label: string; onClick: () => void } {
     if (pkgLinks.length === 0) return { label: "+ Add Vendors to Package", onClick: () => setAddOpen(true) };
     if (readinessCounts.submitted === 0) return { label: "Send Reminders", onClick: () => toast.info("Reminders sent to all invited vendors") };
-    if (readinessCounts.inReview > 0) return { label: "Open Review Queue", onClick: () => setVendorTab("evaluation") };
+    if (readinessCounts.inReview > 0) return {
+      label: "Open Review Queue",
+      onClick: () => {
+        const firstInReview = pkgLinks.find(l => ["In Review", "Review Complete"].includes(l.appStatus));
+        setProjectTab("applicants");
+        if (firstInReview) setSelected(firstInReview.id);
+        setVendorTab("evaluation");
+      },
+    };
     if (readinessStatus === "Ready for Shortlist" || readinessStatus === "Ready for Tender") return { label: "Build Shortlist", onClick: () => setProjectTab("shortlist") };
     return { label: "+ Add Vendors to Package", onClick: () => setAddOpen(true) };
   }
