@@ -85,6 +85,16 @@ export function nowIso() {
 export function requireString(
   value: unknown,
   field: string,
+  options: { optional: true },
+): string | undefined;
+export function requireString(
+  value: unknown,
+  field: string,
+  options?: { optional?: false },
+): string;
+export function requireString(
+  value: unknown,
+  field: string,
   { optional = false }: { optional?: boolean } = {},
 ) {
   if (optional && (value === undefined || value === null || value === "")) {
@@ -112,6 +122,18 @@ export function optionalObject<T>(value: unknown, field: string): T | undefined 
   return value as T;
 }
 
+export function requireEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  field: string,
+  options: { optional: true },
+): T | undefined;
+export function requireEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  field: string,
+  options?: { optional?: false },
+): T;
 export function requireEnum<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -613,8 +635,8 @@ export function buildCommandCenterSummary(state: BackendState): CommandCenterSum
         blocker,
         severity:
           blocker.toLowerCase().includes("expired") || blocker.toLowerCase().includes("missing")
-            ? "critical"
-            : "warning",
+            ? ("critical" as const)
+            : ("warning" as const),
         lastActivityAt: app.lastActivityAt,
       })),
     )
