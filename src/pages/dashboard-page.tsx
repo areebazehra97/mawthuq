@@ -1,20 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
   AlertTriangle, Award, ChevronRight, Layers, MapPin,
   Package, Plus, Settings, Users,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { seededActivityFeed } from "@/data/seed";
 import { MetricCard } from "@/components/metric-card";
 import { SectionHeader } from "@/components/section-header";
-import { SimpleChartCard } from "@/components/simple-chart-card";
 import { VendorPreviewTable } from "@/components/vendor-preview-table";
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
 import { useCommandCenterSummary } from "@/hooks/use-command-center-summary";
 import { useProjects } from "@/hooks/use-projects";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import type { Project, ProjectStatus } from "@/types";
 
@@ -158,18 +154,6 @@ const nextActionCls: Record<NextActionType, string> = {
   "tender":    "border-success text-success-foreground bg-success hover:bg-success/90",
 };
 
-/* ── Left nav ────────────────────────────────────────────────────────────── */
-
-const NAV_SECTIONS = [
-  { id: "attention", label: "Attention" },
-  { id: "projects",  label: "Projects"  },
-  { id: "vendors",   label: "Vendors"   },
-  { id: "analytics", label: "Analytics" },
-  { id: "activity",  label: "Activity"  },
-] as const;
-
-type SectionId = typeof NAV_SECTIONS[number]["id"];
-
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 export function DashboardPage() {
@@ -177,59 +161,8 @@ export function DashboardPage() {
   const { projects } = useProjects();
   const { summary } = useCommandCenterSummary();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<SectionId>("attention");
-  const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement>>>({});
-
-  useEffect(() => {
-    const scrollRoot = document.querySelector<HTMLElement>(
-      "[data-radix-scroll-area-viewport]",
-    );
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let best: { id: SectionId; ratio: number } | null = null;
-        for (const entry of entries) {
-          if (entry.isIntersecting && (!best || entry.intersectionRatio > best.ratio)) {
-            best = { id: entry.target.id as SectionId, ratio: entry.intersectionRatio };
-          }
-        }
-        if (best) setActiveSection(best.id);
-      },
-      { root: scrollRoot ?? null, threshold: [0.15, 0.4, 0.6], rootMargin: "0px 0px -50% 0px" },
-    );
-    for (const { id } of NAV_SECTIONS) {
-      const el = document.getElementById(id);
-      if (el) { sectionRefs.current[id] = el; observer.observe(el); }
-    }
-    return () => observer.disconnect();
-  }, []);
-
-  function scrollToSection(id: SectionId) {
-    setActiveSection(id);
-    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 
   /* Derived metrics */
-  const passCount        = vendors.filter((v) => v.status === "PASS").length;
-  const conditionalCount = vendors.filter((v) => v.status === "CONDITIONAL").length;
-  const failCount        = vendors.filter((v) => v.status === "FAIL").length;
-
-  const decisionDistribution = [
-    { label: "PASS",        value: passCount,        color: "bg-emerald-500" },
-    { label: "CONDITIONAL", value: conditionalCount, color: "bg-amber-400" },
-    { label: "FAIL",        value: failCount,        color: "bg-rose-500" },
-  ];
-  const riskCategories = [
-    { label: "Regulatory",    value: 4, color: "bg-rose-500" },
-    { label: "Financial",     value: 3, color: "bg-orange-400" },
-    { label: "Documentation", value: 5, color: "bg-sky-500" },
-    { label: "HSE",           value: 2, color: "bg-lime-500" },
-  ];
-  const reviewStatus = [
-    { label: "Approved",  value: vendors.filter((v) => v.reviewStage === "Approved").length,  color: "bg-emerald-500" },
-    { label: "In Review", value: vendors.filter((v) => v.reviewStage === "In Review").length, color: "bg-amber-400" },
-    { label: "Rejected",  value: vendors.filter((v) => v.reviewStage === "Rejected").length,  color: "bg-rose-500" },
-  ];
-
   const attentionPackages = useMemo<AttentionPackage[]>(() => {
     if (!summary) return ATTENTION_PACKAGES;
     const toActionType = (action: string): NextActionType => {
@@ -291,169 +224,75 @@ export function DashboardPage() {
         }
       />
 
-      <div className="flex gap-6">
-        {/* ── Sticky left nav ─────────────────────────── */}
-        <aside className="hidden xl:flex w-40 shrink-0 flex-col">
-          <nav className="sticky top-6 space-y-0.5">
-            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Sections
-            </p>
-            {NAV_SECTIONS.map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => scrollToSection(id)}
-                className={cn(
-                  "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
-                  activeSection === id
-                    ? "bg-primary/8 font-semibold text-primary"
-                    : "text-muted-foreground hover:bg-surface hover:text-foreground",
-                )}
-              >
-                {label}
-                {id === "attention" && attentionCount > 0 && (
-                  <span className="ml-1.5 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {attentionCount}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* ── Scrollable content ──────────────────────── */}
-        <div className="min-w-0 flex-1 space-y-10">
-
-          {/* ── Attention section ── */}
-          <section id="attention" className="scroll-mt-4 space-y-5">
-
-            {/* KPI cards */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard
-                label="Active Packages"
-                value={String(summary?.kpis.totalPackages ?? 12)}
-                supporting={`Across ${summary?.kpis.activeProjects ?? 3} active projects`}
-                icon={<Layers className="h-5 w-5" />}
-              />
-              <MetricCard
-                label="Vendors in Pipeline"
-                value={String(
-                  summary
-                    ? summary.kpis.totalInvitations + summary.kpis.submittedApplications
-                    : 48,
-                )}
-                supporting="Invited across all packages"
-                icon={<Users className="h-5 w-5" />}
-              />
-              <MetricCard
-                label="Packages Needing Action"
-                value={String(attentionCount)}
-                supporting="Blocked, gap, or overdue"
-                icon={<AlertTriangle className="h-5 w-5" />}
-                className="border-warning/30"
-              />
-              <MetricCard
-                label="Ready for Tender"
-                value={String(
-                  summary
-                    ? summary.packagesNeedingAttention.filter(
-                        (pkg) => pkg.readinessStatus === "Ready for Tender",
-                      ).length
-                    : 2,
-                )}
-                supporting="Shortlist complete"
-                icon={<Award className="h-5 w-5" />}
-                className="border-success/30"
-              />
-            </div>
-
-            {/* Packages needing attention table */}
-            <PackagesNeedingAttention
-              packages={attentionPackages}
-              onNextAction={handleNextAction}
+      <div className="space-y-10">
+        <section className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Active Packages"
+              value={String(summary?.kpis.totalPackages ?? 12)}
+              supporting={`Across ${summary?.kpis.activeProjects ?? 3} active projects`}
+              icon={<Layers className="h-5 w-5" />}
             />
-          </section>
+            <MetricCard
+              label="Vendors in Pipeline"
+              value={String(
+                summary
+                  ? summary.kpis.totalInvitations + summary.kpis.submittedApplications
+                  : 48,
+              )}
+              supporting="Invited across all packages"
+              icon={<Users className="h-5 w-5" />}
+            />
+            <MetricCard
+              label="Packages Needing Action"
+              value={String(attentionCount)}
+              supporting="Blocked, gap, or overdue"
+              icon={<AlertTriangle className="h-5 w-5" />}
+              className="border-warning/30"
+            />
+            <MetricCard
+              label="Ready for Tender"
+              value={String(
+                summary
+                  ? summary.packagesNeedingAttention.filter(
+                      (pkg) => pkg.readinessStatus === "Ready for Tender",
+                    ).length
+                  : 2,
+              )}
+              supporting="Shortlist complete"
+              icon={<Award className="h-5 w-5" />}
+              className="border-success/30"
+            />
+          </div>
 
-          {/* Projects */}
-          <section id="projects" className="scroll-mt-4">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="text-sm font-semibold text-foreground">Projects</span>
-              <div className="h-px flex-1 bg-border" />
-              <Link
-                to="/project-setup"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                New Project
-              </Link>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {projects.map((project) => (
-                <DashboardProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          </section>
+          <PackagesNeedingAttention
+            packages={attentionPackages}
+            onNextAction={handleNextAction}
+          />
+        </section>
 
-          {/* Vendors */}
-          <section id="vendors" className="scroll-mt-4">
-            <VendorPreviewTable vendors={vendors} projects={projects} />
-          </section>
+        <section>
+          <div className="mb-4 flex items-center gap-3">
+            <span className="text-sm font-semibold text-foreground">Projects</span>
+            <div className="h-px flex-1 bg-border" />
+            <Link
+              to="/project-setup"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New Project
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {projects.map((project) => (
+              <DashboardProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </section>
 
-          {/* Analytics */}
-          <section id="analytics" className="scroll-mt-4">
-            <SectionDivider title="Analytics" />
-            <div className="mt-4 grid gap-6 xl:grid-cols-3">
-              <SimpleChartCard title="Decision Distribution" description="Current recommendation mix across reviewed contractors."        data={decisionDistribution} />
-              <SimpleChartCard title="Risk Categories"       description="Illustrative risk clustering across seeded package findings."  data={riskCategories} />
-              <SimpleChartCard title="Review Status"         description="How far packages have progressed through the review workflow." data={reviewStatus} />
-            </div>
-          </section>
-
-          {/* Activity */}
-          <section id="activity" className="scroll-mt-4">
-            <SectionDivider title="Activity" />
-            <div className="mt-4 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent activity</CardTitle>
-                  <CardDescription>Live-style operational events demonstrating auditability and workflow momentum.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {(summary?.recentActivity ?? seededActivityFeed).map((item) => (
-                    <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                        <p className="text-sm leading-6 text-muted-foreground">{item.detail}</p>
-                      </div>
-                      <div className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{item.when}</div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Decision posture</CardTitle>
-                  <CardDescription>Why each vendor landed in its current outcome band.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {vendors.map((v) => (
-                    <div key={v.id} className="rounded-lg border border-border bg-surface p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{v.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">{v.summary}</p>
-                        </div>
-                        <StatusBadge status={v.status} />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-        </div>
+        <section>
+          <VendorPreviewTable vendors={vendors} projects={projects} />
+        </section>
       </div>
     </div>
   );
@@ -512,16 +351,13 @@ function PackagesNeedingAttention({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[780px] text-sm">
             <thead>
               <tr className="border-b border-border text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 <th className="px-6 py-3 text-start">Package</th>
                 <th className="px-3 py-3 text-start">Project</th>
                 <th className="px-3 py-3 text-start">Category</th>
                 <th className="px-3 py-3 text-start">Readiness</th>
-                <th className="px-3 py-3 text-center">Invited</th>
-                <th className="px-3 py-3 text-center">Submitted</th>
-                <th className="px-3 py-3 text-center">Qualified</th>
                 <th className="px-3 py-3 text-start">Main Blocker</th>
                 <th className="px-6 py-3 text-end">Next Action</th>
               </tr>
@@ -530,13 +366,6 @@ function PackagesNeedingAttention({
               {packages.map((pkg) => {
                 const isHighPriority = READINESS_PRIORITY[pkg.readiness] <= 2;
                 const accentCls = readinessRowAccent[pkg.readiness] ?? "";
-                const qualMetCls =
-                  pkg.qualified >= pkg.qualifiedRequired
-                    ? "text-success font-semibold"
-                    : pkg.qualified === 0
-                    ? "text-muted-foreground"
-                    : "text-warning-foreground font-medium";
-
                 return (
                   <tr
                     key={pkg.id}
@@ -580,29 +409,6 @@ function PackagesNeedingAttention({
                       </span>
                     </td>
 
-                    {/* Invited */}
-                    <td className="px-3 py-4 text-center tabular-nums text-sm font-medium text-foreground">
-                      {pkg.invited}
-                    </td>
-
-                    {/* Submitted */}
-                    <td className="px-3 py-4 text-center">
-                      <span className={cn(
-                        "tabular-nums text-sm font-medium",
-                        pkg.submitted === 0 ? "text-muted-foreground" : "text-foreground",
-                      )}>
-                        {pkg.submitted}
-                      </span>
-                    </td>
-
-                    {/* Qualified */}
-                    <td className="px-3 py-4 text-center">
-                      <span className={cn("tabular-nums text-sm", qualMetCls)}>
-                        {pkg.qualified}
-                        <span className="text-muted-foreground font-normal"> / {pkg.qualifiedRequired}</span>
-                      </span>
-                    </td>
-
                     {/* Main blocker */}
                     <td className="px-3 py-4">
                       <div className="flex max-w-[200px] items-start gap-1.5">
@@ -634,17 +440,6 @@ function PackagesNeedingAttention({
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ── Sub-components ───────────────────────────────── */
-
-function SectionDivider({ title }: { title: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm font-semibold text-foreground">{title}</span>
-      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }
