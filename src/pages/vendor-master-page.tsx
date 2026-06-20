@@ -400,7 +400,7 @@ export function VendorMasterPage() {
   const docIssues   = vmVendors.filter(v => v.docHealth === "Expired" || v.docHealth === "Missing").length;
   const highRisk    = vmVendors.filter(v => v.riskLevel === "High" || v.riskLevel === "Critical").length;
 
-  function handleSend(vendor: VMVendor, projectId: string, packageId: string) {
+  function handleSend(vendor: VMVendor, _projectId: string, packageId: string) {
     const pkg = vmPackages.find(p => p.id === packageId);
     toast.success(`Invitation sent to ${vendor.name}`, { description: `Package: ${pkg?.name}` });
     setInvite(null);

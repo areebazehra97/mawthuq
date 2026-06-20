@@ -11,7 +11,7 @@ export function PageShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const location = useLocation();
-  const currentItem =
+  const _currentItem =
     navigationItems.find((item) => item.path === location.pathname) ?? navigationItems[0];
 
   return (

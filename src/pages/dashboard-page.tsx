@@ -58,7 +58,7 @@ const READINESS_PRIORITY: Record<ReadinessStatus, number> = {
   "Ready for Tender":     7,
 };
 
-const ATTENTION_PACKAGES: AttentionPackage[] = [
+const ATTENTION_PACKAGES: AttentionPackage[] = ([
   {
     id: "ap-001",
     package: "Main Works Prequalification",
@@ -119,7 +119,7 @@ const ATTENTION_PACKAGES: AttentionPackage[] = [
     nextAction: "Build shortlist",
     nextActionType: "shortlist",
   },
-].sort((a, b) => READINESS_PRIORITY[a.readiness] - READINESS_PRIORITY[b.readiness]);
+] satisfies AttentionPackage[]).sort((a, b) => READINESS_PRIORITY[a.readiness] - READINESS_PRIORITY[b.readiness]);
 
 /* ── Style maps ──────────────────────────────────────────────────────────── */
 
