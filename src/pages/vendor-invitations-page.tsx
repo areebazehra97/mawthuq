@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Check,
   ChevronDown,
@@ -7,11 +6,14 @@ import {
   Copy,
   Loader2,
   Mail,
+  Plus,
   RefreshCw,
   Search,
   Send,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { tradeCategories } from "@/data/seed";
 import { SectionHeader } from "@/components/section-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { useInvitations } from "@/hooks/use-invitations";
@@ -54,11 +56,19 @@ function today() {
 export function VendorInvitationsPage() {
   const { backendProjects } = useProjects();
   const { packages } = useProjectPackages();
-  const { invitations, updateInvitation } = useInvitations();
+  const { invitations, createInvitation, updateInvitation } = useInvitations();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    companyName: "",
+    contactName: "",
+    contactEmail: "",
+    tradeCategory: "",
+  });
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
   /* Stats */
   const invitationCards = useMemo<VendorInvitation[]>(
@@ -119,6 +129,55 @@ export function VendorInvitationsPage() {
     }
   }
 
+  async function handleInviteAndSend() {
+    const { companyName, contactName, contactEmail, tradeCategory } = inviteForm;
+    if (!companyName.trim() || !contactName.trim() || !contactEmail.trim() || !tradeCategory) return;
+
+    setInviteSubmitting(true);
+    try {
+      const id = `inv-${Date.now()}`;
+      const now = new Date();
+      await createInvitation({
+        id,
+        companyName: companyName.trim(),
+        contactName: contactName.trim(),
+        contactEmail: contactEmail.trim(),
+        category: tradeCategory,
+        status: "Invited",
+        invitedAt: now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        expiresAt: addDays(now, 30),
+      });
+
+      // Send email immediately
+      const res = await fetch(`http://localhost:8787/api/invitations/${id}/send-email`, { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.registrationUrl) {
+          void navigator.clipboard.writeText(data.registrationUrl);
+          toast.success(`Invitation created for ${companyName}`, {
+            description: "Email not configured — registration link copied to clipboard.",
+          });
+        } else {
+          toast.success(`Invitation created for ${companyName}`, {
+            description: "Could not send email automatically. Use the Send button.",
+          });
+        }
+      } else {
+        toast.success(`Invitation sent to ${contactEmail}`, {
+          description: `${companyName} · link expires in 30 days`,
+        });
+      }
+
+      setInviteForm({ companyName: "", contactName: "", contactEmail: "", tradeCategory: "" });
+      setShowInviteForm(false);
+    } catch {
+      toast.error("Failed to create invitation.");
+    } finally {
+      setInviteSubmitting(false);
+    }
+  }
+
   async function resend(id: string) {
     const inv = invitationCards.find((item) => item.id === id);
     try {
@@ -142,17 +201,107 @@ export function VendorInvitationsPage() {
       <SectionHeader
         eyebrow="Vendor Pipeline"
         title="Vendor Invitations"
-        description="Track package-linked vendor invitations, resend expired links, and monitor registration progress."
+        description="Invite vendors to self-register via a secure link, track their submission progress, and trigger AI extraction once they submit."
         action={
-          <Link
-            to="/vendors?invite=1"
+          <button
+            type="button"
+            onClick={() => setShowInviteForm(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
           >
-            <Mail className="h-4 w-4" />
-            Invite from Vendor Master
-          </Link>
+            <Plus className="h-4 w-4" />
+            Invite New Vendor
+          </button>
         }
       />
+
+      {/* ── Invite New Vendor Modal ── */}
+      {showInviteForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Invite New Vendor</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  An email with a secure registration link will be sent to the vendor.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInviteForm(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 p-6">
+              {(
+                [
+                  { label: "Company Name", key: "companyName", placeholder: "e.g. Al-Rashid Contracting Co.", type: "text" },
+                  { label: "Contact Person", key: "contactName", placeholder: "Full name", type: "text" },
+                  { label: "Email Address", key: "contactEmail", placeholder: "contact@company.com", type: "email" },
+                ] as const
+              ).map(({ label, key, placeholder, type }) => (
+                <div key={key} className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    {label} <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    type={type}
+                    value={inviteForm[key]}
+                    onChange={(e) => setInviteForm((f) => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              ))}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Trade Category <span className="text-destructive">*</span>
+                </label>
+                <select
+                  value={inviteForm.tradeCategory}
+                  onChange={(e) => setInviteForm((f) => ({ ...f, tradeCategory: e.target.value }))}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="">Select a category…</option>
+                  {tradeCategories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowInviteForm(false)}
+                className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={
+                  inviteSubmitting ||
+                  !inviteForm.companyName.trim() ||
+                  !inviteForm.contactName.trim() ||
+                  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteForm.contactEmail) ||
+                  !inviteForm.tradeCategory
+                }
+                onClick={handleInviteAndSend}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {inviteSubmitting
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
+                  : <><Send className="h-4 w-4" /> Send Invitation</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Status filter tabs ── */}
       <div className="flex flex-wrap gap-2">
