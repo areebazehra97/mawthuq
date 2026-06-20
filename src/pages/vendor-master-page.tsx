@@ -7,11 +7,20 @@ import {
 } from "lucide-react";
 import { MetricCard } from "@/components/metric-card";
 import { Button } from "@/components/ui/button";
+import { useApplications } from "@/hooks/use-applications";
+import { useInvitations } from "@/hooks/use-invitations";
+import { useProjectPackages } from "@/hooks/use-project-packages";
+import { useProjects } from "@/hooks/use-projects";
 import { cn } from "@/lib/utils";
 import {
-  vmVendors, vmProjects, vmPackages, vmApplications,
-  type VMVendor, type VendorGlobalStatus, type DocHealth, type ApplicationStatus,
+  vmVendors,
+  type VMVendor,
+  type VendorGlobalStatus,
+  type DocHealth,
+  type ApplicationStatus,
+  type PackageQualStatus,
 } from "@/data/vendor-master-seed";
+import type { BackendPackage, BackendProject, VendorPackageApplication } from "@/types";
 
 // ── Status style maps ─────────────────────────────────────────────────────────
 
@@ -71,27 +80,33 @@ type InviteForm = { projectId: string; packageId: string; note: string };
 
 function InviteModal({
   vendor,
+  projects,
+  packages,
+  applications,
   onClose,
   onSend,
 }: {
   vendor: VMVendor;
+  projects: BackendProject[];
+  packages: BackendPackage[];
+  applications: VendorPackageApplication[];
   onClose: () => void;
   onSend: (vendor: VMVendor, projectId: string, packageId: string, note: string) => void;
 }) {
   const [form, setForm] = useState<InviteForm>({ projectId: "", packageId: "", note: "" });
 
-  const openProjects = vmProjects.filter(p => p.status === "Active" || p.status === "Tendering");
-  const pkgsForProject = vmPackages.filter(
+  const openProjects = projects.filter(p => p.status === "Active" || p.status === "Tendering");
+  const pkgsForProject = packages.filter(
     pkg => pkg.projectId === form.projectId && pkg.status !== "Awarded" && pkg.status !== "Closed",
   );
-  const selectedPkg = vmPackages.find(p => p.id === form.packageId);
+  const selectedPkg = packages.find(p => p.id === form.packageId);
 
-  const alreadyApplied = form.packageId !== "" && vmApplications.some(
+  const alreadyApplied = form.packageId !== "" && applications.some(
     a => a.vendorId === vendor.id && a.packageId === form.packageId,
   );
   const categoryMismatch =
     selectedPkg !== undefined &&
-    !selectedPkg.tradeCategories.some(c => vendor.tradeCategories.includes(c));
+    !vendor.tradeCategories.includes(selectedPkg.category);
   const isBlocked  = vendor.globalStatus === "Suspended" || vendor.globalStatus === "Blacklisted";
   const hasDocIssue = vendor.docHealth === "Expired" || vendor.docHealth === "Missing";
   const canSend = form.projectId !== "" && form.packageId !== "" && !isBlocked && !alreadyApplied;
@@ -145,7 +160,7 @@ function InviteModal({
               className={selectCls}
             >
               <option value="">Select a project…</option>
-              {openProjects.map(p => (
+              {openProjects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
@@ -168,7 +183,7 @@ function InviteModal({
                   : "Select a package…"}
               </option>
               {pkgsForProject.map(p => (
-                <option key={p.id} value={p.id}>{p.name} · {p.budget}</option>
+                <option key={p.id} value={p.id}>{p.name} · {p.valueBand}</option>
               ))}
             </select>
           </div>
@@ -229,14 +244,23 @@ const COL = "grid items-center gap-2 px-4" as const;
 const COL_TEMPLATE = "grid-cols-[220px_110px_160px_72px_72px_120px_110px_80px_110px_150px]" as const;
 
 function VendorRow({
-  vendor, isExpanded, onToggle, onInvite,
+  vendor,
+  applications,
+  projects,
+  packages,
+  isExpanded,
+  onToggle,
+  onInvite,
 }: {
   vendor: VMVendor;
+  applications: VendorPackageApplication[];
+  projects: BackendProject[];
+  packages: BackendPackage[];
   isExpanded: boolean;
   onToggle: () => void;
   onInvite: () => void;
 }) {
-  const apps = vmApplications.filter(a => a.vendorId === vendor.id);
+  const apps = applications.filter(a => a.vendorId === vendor.id);
   const initials = vendor.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
 
   return (
@@ -350,15 +374,29 @@ function VendorRow({
                 <span>Applied</span>
               </div>
               {apps.map(app => {
-                const pkg  = vmPackages.find(p => p.id === app.packageId);
-                const proj = vmProjects.find(p => p.id === app.projectId);
+                const pkg  = packages.find(p => p.id === app.packageId);
+                const proj = projects.find(p => p.id === app.projectId);
+                const appStatus = app.qualificationStatus === "Shortlisted"
+                  ? "Shortlisted"
+                  : app.qualificationStatus === "Qualified" ||
+                      app.qualificationStatus === "Conditionally Qualified"
+                    ? "Qualified"
+                    : app.qualificationStatus === "Rejected"
+                      ? "Rejected"
+                      : app.applicationStatus === "Opened" || app.applicationStatus === "In Progress"
+                        ? "Registered"
+                        : app.applicationStatus === "In Review" ||
+                            app.applicationStatus === "Clarification Requested" ||
+                            app.applicationStatus === "Review Complete"
+                          ? "Under Review"
+                          : "Invited";
                 return (
                   <div key={app.id} className="grid grid-cols-[1fr_1fr_120px_60px_100px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
                     <span className="truncate text-sm font-medium text-foreground">{pkg?.name ?? app.packageId}</span>
                     <span className="truncate text-xs text-muted-foreground">{proj?.name ?? app.projectId}</span>
-                    <span className={`status-pill text-[10px] ${appStatusCls[app.status]}`}>{app.status}</span>
-                    <span className="text-center text-xs font-medium text-foreground">{app.aiScore ?? "—"}</span>
-                    <span className="text-xs text-muted-foreground">{relativeDate(app.appliedDate)}</span>
+                    <span className={`status-pill text-[10px] ${appStatusCls[appStatus]}`}>{appStatus}</span>
+                    <span className="text-center text-xs font-medium text-foreground">{app.score ?? "—"}</span>
+                    <span className="text-xs text-muted-foreground">{relativeDate(app.createdAt)}</span>
                   </div>
                 );
               })}
@@ -375,6 +413,10 @@ function VendorRow({
 const allCategories = Array.from(new Set(vmVendors.flatMap(v => v.tradeCategories))).sort();
 
 export function VendorMasterPage() {
+  const { backendProjects } = useProjects();
+  const { packages } = useProjectPackages();
+  const { applications, createApplication } = useApplications();
+  const { createInvitation } = useInvitations();
   const [search,       setSearch]  = useState("");
   const [statusFilter, setStatus]  = useState<VendorGlobalStatus | "All">("All");
   const [catFilter,    setCat]     = useState("All");
@@ -383,7 +425,37 @@ export function VendorMasterPage() {
   const [expandedId,   setExpand]  = useState<string | null>(null);
   const [inviteVendor, setInvite]  = useState<VMVendor | null>(null);
 
-  const filtered = useMemo(() => vmVendors.filter(v => {
+  const enrichedVendors = useMemo(() => vmVendors.map((vendor) => {
+    const vendorApps = applications.filter((app) => app.vendorId === vendor.id);
+    const projectIds = new Set(vendorApps.map((app) => app.projectId));
+    const packageIds = new Set(vendorApps.map((app) => app.packageId));
+    const latestApp = [...vendorApps].sort(
+      (a, b) => new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime(),
+    )[0];
+
+    const packageQualStatus: PackageQualStatus = latestApp
+      ? latestApp.qualificationStatus === "Pending Review"
+        ? "Pending"
+        : latestApp.qualificationStatus === "Rejected"
+          ? "Not Qualified"
+          : latestApp.qualificationStatus === "Qualified" ||
+              latestApp.qualificationStatus === "Conditionally Qualified" ||
+              latestApp.qualificationStatus === "Shortlisted" ||
+              latestApp.qualificationStatus === "Awarded"
+            ? "Qualified"
+            : "Pending"
+      : vendor.packageQualStatus;
+
+    return {
+      ...vendor,
+      linkedProjectCount: projectIds.size,
+      linkedPackageCount: packageIds.size,
+      packageQualStatus,
+      lastActivity: latestApp?.lastActivityAt ?? vendor.lastActivity,
+    };
+  }), [applications]);
+
+  const filtered = useMemo(() => enrichedVendors.filter(v => {
     const q = search.toLowerCase();
     if (q && !v.name.toLowerCase().includes(q) && !v.city.toLowerCase().includes(q)) return false;
     if (statusFilter !== "All" && v.globalStatus !== statusFilter) return false;
@@ -391,19 +463,40 @@ export function VendorMasterPage() {
     if (riskFilter !== "All" && v.riskLevel !== riskFilter) return false;
     if (docFilter !== "All" && v.docHealth !== docFilter) return false;
     return true;
-  }), [search, statusFilter, catFilter, riskFilter, docFilter]);
+  }), [catFilter, docFilter, enrichedVendors, riskFilter, search, statusFilter]);
 
-  const total       = vmVendors.length;
-  const activeCount = vmVendors.filter(v => v.globalStatus === "Active").length;
-  const reviewCount = vmVendors.filter(v => v.globalStatus === "Under Review").length;
-  const qualCount   = vmVendors.filter(v => v.packageQualStatus === "Qualified").length;
-  const docIssues   = vmVendors.filter(v => v.docHealth === "Expired" || v.docHealth === "Missing").length;
-  const highRisk    = vmVendors.filter(v => v.riskLevel === "High" || v.riskLevel === "Critical").length;
+  const total       = enrichedVendors.length;
+  const activeCount = enrichedVendors.filter(v => v.globalStatus === "Active").length;
+  const reviewCount = enrichedVendors.filter(v => v.globalStatus === "Under Review").length;
+  const qualCount   = enrichedVendors.filter(v => v.packageQualStatus === "Qualified").length;
+  const docIssues   = enrichedVendors.filter(v => v.docHealth === "Expired" || v.docHealth === "Missing").length;
+  const highRisk    = enrichedVendors.filter(v => v.riskLevel === "High" || v.riskLevel === "Critical").length;
 
-  function handleSend(vendor: VMVendor, _projectId: string, packageId: string) {
-    const pkg = vmPackages.find(p => p.id === packageId);
-    toast.success(`Invitation sent to ${vendor.name}`, { description: `Package: ${pkg?.name}` });
-    setInvite(null);
+  function handleSend(vendor: VMVendor, projectId: string, packageId: string) {
+    const pkg = packages.find(p => p.id === packageId);
+    void Promise.all([
+      createInvitation({
+        vendorId: vendor.id,
+        projectId,
+        packageId,
+        companyName: vendor.name,
+        contactName: vendor.contactName,
+        contactEmail: vendor.contactEmail,
+        category: pkg?.category ?? vendor.tradeCategories[0],
+        status: "Invited",
+      }),
+      createApplication({
+        vendorId: vendor.id,
+        projectId,
+        packageId,
+        applicationStatus: "Invited",
+        qualificationStatus: "Not Started",
+        source: "invited",
+      }),
+    ]).then(() => {
+      toast.success(`Invitation sent to ${vendor.name}`, { description: `Package: ${pkg?.name}` });
+      setInvite(null);
+    });
   }
 
   const sel = "rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -421,7 +514,7 @@ export function VendorMasterPage() {
           </p>
         </div>
         <button
-          onClick={() => setInvite(vmVendors[0])}
+          onClick={() => setInvite(enrichedVendors[0] ?? null)}
           className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
@@ -511,6 +604,9 @@ export function VendorMasterPage() {
             <VendorRow
               key={vendor.id}
               vendor={vendor}
+              applications={applications}
+              projects={backendProjects}
+              packages={packages}
               isExpanded={expandedId === vendor.id}
               onToggle={() => setExpand(p => p === vendor.id ? null : vendor.id)}
               onInvite={() => setInvite(vendor)}
@@ -528,6 +624,9 @@ export function VendorMasterPage() {
       {inviteVendor && (
         <InviteModal
           vendor={inviteVendor}
+          projects={backendProjects}
+          packages={packages}
+          applications={applications}
           onClose={() => setInvite(null)}
           onSend={handleSend}
         />

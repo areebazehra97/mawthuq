@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Award, ChevronRight, Layers, MapPin,
   Package, Plus, Settings, Users,
@@ -11,6 +11,7 @@ import { SectionHeader } from "@/components/section-header";
 import { SimpleChartCard } from "@/components/simple-chart-card";
 import { VendorPreviewTable } from "@/components/vendor-preview-table";
 import { useDemoVendors } from "@/hooks/use-demo-vendors";
+import { useCommandCenterSummary } from "@/hooks/use-command-center-summary";
 import { useProjects } from "@/hooks/use-projects";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
@@ -174,6 +175,7 @@ type SectionId = typeof NAV_SECTIONS[number]["id"];
 export function DashboardPage() {
   const { vendors } = useDemoVendors();
   const { projects } = useProjects();
+  const { summary } = useCommandCenterSummary();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<SectionId>("attention");
   const sectionRefs = useRef<Partial<Record<SectionId, HTMLElement>>>({});
@@ -228,7 +230,35 @@ export function DashboardPage() {
     { label: "Rejected",  value: vendors.filter((v) => v.reviewStage === "Rejected").length,  color: "bg-rose-500" },
   ];
 
-  const attentionCount = ATTENTION_PACKAGES.filter(
+  const attentionPackages = useMemo<AttentionPackage[]>(() => {
+    if (!summary) return ATTENTION_PACKAGES;
+    const toActionType = (action: string): NextActionType => {
+      if (action.includes("Add")) return "add";
+      if (action.includes("Invite")) return "invite";
+      if (action.includes("remind") || action.includes("Reminder") || action.includes("Send")) return "remind";
+      if (action.includes("shortlist")) return "shortlist";
+      if (action.includes("tender")) return "tender";
+      return "review";
+    };
+
+    return summary.packagesNeedingAttention.map((pkg) => ({
+      id: pkg.packageId,
+      package: pkg.packageName,
+      project: pkg.projectName,
+      projectId: pkg.projectId,
+      category: pkg.category,
+      readiness: pkg.readinessStatus,
+      invited: pkg.invitedCount,
+      submitted: pkg.submittedCount,
+      qualified: pkg.qualifiedCount,
+      qualifiedRequired: pkg.requiredVendorCount,
+      mainBlocker: pkg.mainBlocker,
+      nextAction: pkg.nextAction,
+      nextActionType: toActionType(pkg.nextAction),
+    }));
+  }, [summary]);
+
+  const attentionCount = attentionPackages.filter(
     p => !["Ready for Shortlist", "Ready for Tender"].includes(p.readiness),
   ).length;
 
@@ -301,13 +331,17 @@ export function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard
                 label="Active Packages"
-                value="12"
-                supporting="Across 3 active projects"
+                value={String(summary?.kpis.totalPackages ?? 12)}
+                supporting={`Across ${summary?.kpis.activeProjects ?? 3} active projects`}
                 icon={<Layers className="h-5 w-5" />}
               />
               <MetricCard
                 label="Vendors in Pipeline"
-                value="48"
+                value={String(
+                  summary
+                    ? summary.kpis.totalInvitations + summary.kpis.submittedApplications
+                    : 48,
+                )}
                 supporting="Invited across all packages"
                 icon={<Users className="h-5 w-5" />}
               />
@@ -320,7 +354,13 @@ export function DashboardPage() {
               />
               <MetricCard
                 label="Ready for Tender"
-                value="2"
+                value={String(
+                  summary
+                    ? summary.packagesNeedingAttention.filter(
+                        (pkg) => pkg.readinessStatus === "Ready for Tender",
+                      ).length
+                    : 2,
+                )}
                 supporting="Shortlist complete"
                 icon={<Award className="h-5 w-5" />}
                 className="border-success/30"
@@ -329,7 +369,7 @@ export function DashboardPage() {
 
             {/* Packages needing attention table */}
             <PackagesNeedingAttention
-              packages={ATTENTION_PACKAGES}
+              packages={attentionPackages}
               onNextAction={handleNextAction}
             />
           </section>
@@ -379,7 +419,7 @@ export function DashboardPage() {
                   <CardDescription>Live-style operational events demonstrating auditability and workflow momentum.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {seededActivityFeed.map((item) => (
+                  {(summary?.recentActivity ?? seededActivityFeed).map((item) => (
                     <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-foreground">{item.title}</p>

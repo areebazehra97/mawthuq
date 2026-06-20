@@ -1,5 +1,8 @@
 import type {
   AuditRecord,
+  BackendInvitation,
+  BackendPackage,
+  BackendProject,
   BackendState,
   ActivityFeedItem,
   DocumentStatus,
@@ -10,11 +13,13 @@ import type {
   Project,
   ProjectConfig,
   ReviewerRole,
+  VendorPackageApplication,
   VendorExtraction,
   VendorDocument,
   VendorInvitation,
   VendorRecord,
 } from "@/types";
+import { seededPkgLinks } from "@/data/package-applications";
 
 export const vendorStorageKey = "mawthuq-demo-vendors";
 export const packageConfigStorageKey = "mawthuq-package-config";
@@ -793,6 +798,234 @@ export const seededInvitations: VendorInvitation[] = [
   },
 ];
 
+function isoDate(value: string) {
+  return new Date(value).toISOString();
+}
+
+function toProjectStatus(status: Project["status"]): BackendProject["status"] {
+  switch (status) {
+    case "Planning":
+      return "Planning";
+    case "Tendering":
+      return "Tendering";
+    case "Active":
+      return "Active";
+    case "Closed":
+      return "Archived";
+  }
+}
+
+function toInvitationStatus(
+  status: VendorInvitation["status"],
+): BackendInvitation["status"] {
+  switch (status) {
+    case "invited":
+      return "Invited";
+    case "opened":
+      return "Opened";
+    case "started":
+      return "In Progress";
+    case "submitted":
+      return "Submitted";
+    case "expired":
+      return "Expired";
+    case "bounced":
+      return "Bounced";
+    case "declined":
+      return "Declined";
+  }
+}
+
+function toApplicationStatus(
+  status: (typeof seededPkgLinks)[number]["appStatus"],
+): VendorPackageApplication["applicationStatus"] {
+  switch (status) {
+    case "Invited":
+      return "Invited";
+    case "Opened":
+      return "Opened";
+    case "In Progress":
+      return "In Progress";
+    case "Submitted":
+      return "Submitted";
+    case "In Review":
+      return "In Review";
+    case "Clarification Requested":
+      return "Clarification Requested";
+    case "Review Complete":
+      return "Review Complete";
+    case "Withdrawn":
+      return "Withdrawn";
+  }
+}
+
+function toQualificationStatus(
+  status: (typeof seededPkgLinks)[number]["qualStatus"],
+): VendorPackageApplication["qualificationStatus"] {
+  switch (status) {
+    case "Not Started":
+      return "Not Started";
+    case "Pending Review":
+      return "Pending Review";
+    case "Qualified":
+      return "Qualified";
+    case "Conditionally Qualified":
+      return "Conditionally Qualified";
+    case "Rejected":
+      return "Rejected";
+    case "Shortlisted":
+      return "Shortlisted";
+    case "Awarded":
+      return "Awarded";
+  }
+}
+
+function buildPackageReadiness(
+  applications: VendorPackageApplication[],
+): BackendPackage["readinessStatus"] {
+  if (applications.length === 0) return "Not Started";
+
+  const shortlisted = applications.filter((app) => app.qualificationStatus === "Shortlisted").length;
+  const qualified = applications.filter((app) =>
+    app.qualificationStatus === "Qualified" || app.qualificationStatus === "Conditionally Qualified",
+  ).length;
+  const inReview = applications.filter((app) =>
+    app.applicationStatus === "In Review" || app.applicationStatus === "Review Complete",
+  ).length;
+  const submitted = applications.filter((app) =>
+    ["Submitted", "In Review", "Clarification Requested", "Review Complete"].includes(
+      app.applicationStatus,
+    ),
+  ).length;
+  const blocked = applications.filter((app) => (app.openBlockers?.length ?? 0) > 0).length;
+
+  if (blocked > 0 && inReview === 0 && submitted === 0) return "Blocked";
+  if (shortlisted >= 3) return "Ready for Tender";
+  if (qualified + shortlisted >= 3) return "Ready for Shortlist";
+  if (inReview > 0) return "Under Review";
+  if (submitted === 0) return "Awaiting Submissions";
+  if (qualified + shortlisted < 3) return "Vendor Gap";
+  return "Sourcing Vendors";
+}
+
+export const seededBackendProjects: BackendProject[] = seededProjects.map((project, index) => ({
+  id: project.id,
+  name: project.name,
+  arabicName: project.arabicName,
+  location: project.location,
+  status: toProjectStatus(project.status),
+  description: project.scope,
+  timeline: project.timeline,
+  categories: project.categories,
+  reviewers: project.reviewers,
+  requiredExperience: project.requiredExperience,
+  requiredCertifications: project.requiredCertifications,
+  config: project.config,
+  startDate:
+    index === 0 ? "2026-04-01" : index === 1 ? "2026-05-01" : "2026-06-01",
+  targetCompletionDate:
+    project.timeline ? undefined : index === 0 ? "2028-09-30" : index === 1 ? "2028-12-31" : "2027-09-30",
+  createdAt: isoDate(`2026-06-${String(1 + index).padStart(2, "0")}T09:00:00Z`),
+  updatedAt: isoDate(`2026-06-${String(10 + index).padStart(2, "0")}T09:00:00Z`),
+}));
+
+export const seededBackendPackages: BackendPackage[] = seededProjects.map((project, index) => {
+  const packageId = `pkg-${project.id}`;
+  const projectApplications = seededPkgLinks
+    .filter((link) => link.projectId === project.id)
+    .map<VendorPackageApplication>((link) => ({
+      id: link.id,
+      vendorId: link.vendorId,
+      projectId: link.projectId,
+      packageId,
+      applicationStatus: toApplicationStatus(link.appStatus),
+      qualificationStatus: toQualificationStatus(link.qualStatus),
+      score: link.score,
+      recommendation:
+        link.qualStatus === "Qualified" || link.qualStatus === "Shortlisted"
+          ? "PASS"
+          : link.qualStatus === "Conditionally Qualified"
+            ? "CONDITIONAL"
+            : link.qualStatus === "Rejected"
+              ? "FAIL"
+              : undefined,
+      openBlockers: link.blockers,
+      rationale: link.rationale,
+      source: link.source,
+      createdAt: isoDate(`${new Date().getFullYear()}-01-01T00:00:00Z`),
+      updatedAt: isoDate(`${new Date().getFullYear()}-01-02T00:00:00Z`),
+      lastActivityAt: isoDate(`${new Date().getFullYear()}-01-03T00:00:00Z`),
+    }));
+
+  return {
+    id: packageId,
+    projectId: project.id,
+    name: project.packageName,
+    category: project.workCategory,
+    valueBand: project.packageValueBand,
+    status:
+      project.status === "Closed"
+        ? "Closed"
+        : project.status === "Tendering"
+          ? "Evaluating"
+          : "Open",
+    readinessStatus: buildPackageReadiness(projectApplications),
+    requiredVendorCount: 3,
+    deadline: project.registrationDeadline,
+    criteria: project.requiredCertifications,
+    primaryForProject: true,
+    createdAt: isoDate(`2026-06-${String(1 + index).padStart(2, "0")}T09:30:00Z`),
+    updatedAt: isoDate(`2026-06-${String(10 + index).padStart(2, "0")}T09:30:00Z`),
+  };
+});
+
+export const seededBackendApplications: VendorPackageApplication[] = seededPkgLinks.map((link) => ({
+  id: link.id,
+  vendorId: link.vendorId,
+  projectId: link.projectId,
+  packageId: `pkg-${link.projectId}`,
+  applicationStatus: toApplicationStatus(link.appStatus),
+  qualificationStatus: toQualificationStatus(link.qualStatus),
+  score: link.score,
+  recommendation:
+    link.qualStatus === "Qualified" || link.qualStatus === "Shortlisted"
+      ? "PASS"
+      : link.qualStatus === "Conditionally Qualified"
+        ? "CONDITIONAL"
+        : link.qualStatus === "Rejected"
+          ? "FAIL"
+          : undefined,
+  openBlockers: link.blockers,
+  rationale: link.rationale,
+  source: link.source,
+  createdAt: isoDate(`2026-06-01T10:00:00Z`),
+  updatedAt: isoDate(`2026-06-16T10:00:00Z`),
+  lastActivityAt: isoDate(`2026-06-16T10:00:00Z`),
+}));
+
+export const seededBackendInvitations: BackendInvitation[] = seededInvitations.map((inv) => {
+  const project = seededProjects.find((item) => inv.projectContext?.includes(item.name.split(" — ")[0]));
+  const backendPackage = project
+    ? seededBackendPackages.find((pkg) => pkg.projectId === project.id && pkg.primaryForProject)
+    : undefined;
+
+  return {
+    id: inv.id,
+    projectId: project?.id,
+    packageId: backendPackage?.id,
+    companyName: inv.companyName,
+    contactName: inv.contactPerson,
+    contactEmail: inv.email,
+    category: inv.tradeCategory,
+    status: toInvitationStatus(inv.status),
+    invitedAt: inv.invitedAt,
+    expiresAt: inv.expiresAt,
+    createdAt: isoDate("2026-06-01T11:00:00Z"),
+    updatedAt: isoDate("2026-06-16T11:00:00Z"),
+    lastActivityAt: isoDate("2026-06-16T11:00:00Z"),
+  };
+});
+
 export const seededBackendState: BackendState = {
   vendors: seededVendors.map((vendor) => ({
     ...vendor,
@@ -804,5 +1037,9 @@ export const seededBackendState: BackendState = {
   fieldReviewStates: [],
   ruleReviewStates: [],
   packageConfig: seededPackageConfig,
+  projects: seededBackendProjects,
+  packages: seededBackendPackages,
+  vendorPackageApplications: seededBackendApplications,
+  invitations: seededBackendInvitations,
   reports: {},
 };

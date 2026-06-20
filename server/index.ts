@@ -2,6 +2,18 @@ import cors from "cors";
 import express from "express";
 import { createExtractionRun } from "./extraction";
 import { clearStoredUploads, saveUpload } from "./file-storage";
+import {
+  buildApplication,
+  buildCommandCenterSummary,
+  buildInvitation,
+  buildPackage,
+  buildProject,
+  patchApplication,
+  patchInvitation,
+  patchPackage,
+  patchProject,
+  refreshPackageReadiness,
+} from "./portfolio";
 import { readState, resetState, writeState } from "./store";
 import { buildVendorScorecard } from "../src/lib/scorecard";
 import { seededBackendState } from "../src/data/seed";
@@ -23,6 +35,250 @@ app.use(express.json({ limit: "25mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/api/projects", async (_req, res) => {
+  const state = await readState();
+  res.json(state.projects);
+});
+
+app.get("/api/projects/:projectId", async (req, res) => {
+  const state = await readState();
+  const project = state.projects.find((item) => item.id === req.params.projectId);
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  res.json(project);
+});
+
+app.post("/api/projects", async (req, res) => {
+  try {
+    const state = await readState();
+    const nextProject = buildProject(req.body as Record<string, unknown>);
+    state.projects = [nextProject, ...state.projects];
+    await writeState(state);
+    res.status(201).json(nextProject);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid project payload" });
+  }
+});
+
+app.patch("/api/projects/:projectId", async (req, res) => {
+  try {
+    const state = await readState();
+    const project = state.projects.find((item) => item.id === req.params.projectId);
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+    const nextProject = patchProject(project, req.body as Record<string, unknown>);
+    state.projects = state.projects.map((item) =>
+      item.id === req.params.projectId ? nextProject : item,
+    );
+    await writeState(state);
+    res.json(nextProject);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid project payload" });
+  }
+});
+
+app.delete("/api/projects/:projectId", async (req, res) => {
+  const state = await readState();
+  const projectId = req.params.projectId;
+  const packageIds = state.packages.filter((item) => item.projectId === projectId).map((item) => item.id);
+
+  state.projects = state.projects.filter((item) => item.id !== projectId);
+  state.packages = state.packages.filter((item) => item.projectId !== projectId);
+  state.vendorPackageApplications = state.vendorPackageApplications.filter(
+    (item) => item.projectId !== projectId && !packageIds.includes(item.packageId),
+  );
+  state.invitations = state.invitations.filter(
+    (item) => item.projectId !== projectId && !(item.packageId && packageIds.includes(item.packageId)),
+  );
+  await writeState(state);
+  res.status(204).send();
+});
+
+app.get("/api/projects/:projectId/packages", async (req, res) => {
+  const state = await readState();
+  refreshPackageReadiness(state);
+  res.json(state.packages.filter((item) => item.projectId === req.params.projectId));
+});
+
+app.get("/api/packages/:packageId", async (req, res) => {
+  const state = await readState();
+  const pkg = state.packages.find((item) => item.id === req.params.packageId);
+  if (!pkg) {
+    res.status(404).json({ error: "Package not found" });
+    return;
+  }
+  res.json(pkg);
+});
+
+app.post("/api/projects/:projectId/packages", async (req, res) => {
+  try {
+    const state = await readState();
+    const project = state.projects.find((item) => item.id === req.params.projectId);
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+      return;
+    }
+    const nextPackage = buildPackage(req.params.projectId, req.body as Record<string, unknown>);
+    state.packages = [nextPackage, ...state.packages];
+    refreshPackageReadiness(state);
+    await writeState(state);
+    res.status(201).json(nextPackage);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid package payload" });
+  }
+});
+
+app.patch("/api/packages/:packageId", async (req, res) => {
+  try {
+    const state = await readState();
+    const pkg = state.packages.find((item) => item.id === req.params.packageId);
+    if (!pkg) {
+      res.status(404).json({ error: "Package not found" });
+      return;
+    }
+    const nextPackage = patchPackage(pkg, req.body as Record<string, unknown>);
+    state.packages = state.packages.map((item) =>
+      item.id === req.params.packageId ? nextPackage : item,
+    );
+    refreshPackageReadiness(state);
+    await writeState(state);
+    res.json(nextPackage);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid package payload" });
+  }
+});
+
+app.delete("/api/packages/:packageId", async (req, res) => {
+  const state = await readState();
+  const packageId = req.params.packageId;
+  state.packages = state.packages.filter((item) => item.id !== packageId);
+  state.vendorPackageApplications = state.vendorPackageApplications.filter(
+    (item) => item.packageId !== packageId,
+  );
+  state.invitations = state.invitations.filter((item) => item.packageId !== packageId);
+  await writeState(state);
+  res.status(204).send();
+});
+
+app.get("/api/applications", async (_req, res) => {
+  const state = await readState();
+  refreshPackageReadiness(state);
+  res.json(state.vendorPackageApplications);
+});
+
+app.get("/api/packages/:packageId/applications", async (req, res) => {
+  const state = await readState();
+  res.json(state.vendorPackageApplications.filter((item) => item.packageId === req.params.packageId));
+});
+
+app.get("/api/vendors/:vendorId/applications", async (req, res) => {
+  const state = await readState();
+  res.json(state.vendorPackageApplications.filter((item) => item.vendorId === req.params.vendorId));
+});
+
+app.post("/api/applications", async (req, res) => {
+  try {
+    const state = await readState();
+    const nextApplication = buildApplication(req.body as Record<string, unknown>);
+    state.vendorPackageApplications = [nextApplication, ...state.vendorPackageApplications];
+    refreshPackageReadiness(state);
+    await writeState(state);
+    res.status(201).json(nextApplication);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid application payload" });
+  }
+});
+
+app.patch("/api/applications/:applicationId", async (req, res) => {
+  try {
+    const state = await readState();
+    const application = state.vendorPackageApplications.find(
+      (item) => item.id === req.params.applicationId,
+    );
+    if (!application) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    const nextApplication = patchApplication(application, req.body as Record<string, unknown>);
+    state.vendorPackageApplications = state.vendorPackageApplications.map((item) =>
+      item.id === req.params.applicationId ? nextApplication : item,
+    );
+    refreshPackageReadiness(state);
+    await writeState(state);
+    res.json(nextApplication);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid application payload" });
+  }
+});
+
+app.delete("/api/applications/:applicationId", async (req, res) => {
+  const state = await readState();
+  const applicationId = req.params.applicationId;
+  state.vendorPackageApplications = state.vendorPackageApplications.filter(
+    (item) => item.id !== applicationId,
+  );
+  state.invitations = state.invitations.map((item) =>
+    item.applicationId === applicationId ? { ...item, applicationId: undefined } : item,
+  );
+  refreshPackageReadiness(state);
+  await writeState(state);
+  res.status(204).send();
+});
+
+app.get("/api/invitations", async (_req, res) => {
+  const state = await readState();
+  res.json(state.invitations);
+});
+
+app.post("/api/invitations", async (req, res) => {
+  try {
+    const state = await readState();
+    const nextInvitation = buildInvitation(req.body as Record<string, unknown>);
+    state.invitations = [nextInvitation, ...state.invitations];
+    await writeState(state);
+    res.status(201).json(nextInvitation);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid invitation payload" });
+  }
+});
+
+app.patch("/api/invitations/:invitationId", async (req, res) => {
+  try {
+    const state = await readState();
+    const invitation = state.invitations.find((item) => item.id === req.params.invitationId);
+    if (!invitation) {
+      res.status(404).json({ error: "Invitation not found" });
+      return;
+    }
+    const nextInvitation = patchInvitation(invitation, req.body as Record<string, unknown>);
+    state.invitations = state.invitations.map((item) =>
+      item.id === req.params.invitationId ? nextInvitation : item,
+    );
+    await writeState(state);
+    res.json(nextInvitation);
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "Invalid invitation payload" });
+  }
+});
+
+app.delete("/api/invitations/:invitationId", async (req, res) => {
+  const state = await readState();
+  state.invitations = state.invitations.filter((item) => item.id !== req.params.invitationId);
+  await writeState(state);
+  res.status(204).send();
+});
+
+app.get("/api/command-center/summary", async (_req, res) => {
+  const state = await readState();
+  const summary = buildCommandCenterSummary(state);
+  await writeState(state);
+  res.json(summary);
 });
 
 app.get("/api/vendors", async (_req, res) => {

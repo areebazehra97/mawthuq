@@ -7,12 +7,19 @@ import {
   RefreshCw, Search, Send, Settings, Shield, Star, Users, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { seededInvitations, tradeCategories } from "@/data/seed";
-import { seededPkgLinks, getReadinessStatus, type PackageVendorLink, type PkgAppStatus, type PkgQualStatus, type PkgReadinessStatus } from "@/data/package-applications";
+import { tradeCategories } from "@/data/seed";
+import { getReadinessStatus, type PackageVendorLink, type PkgAppStatus, type PkgQualStatus, type PkgReadinessStatus } from "@/data/package-applications";
 import { vmVendors, vmDocuments, vmFindings, vmReviews, vmActivity, type VMVendor, type VendorGlobalStatus } from "@/data/vendor-master-seed";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useApplications } from "@/hooks/use-applications";
+import { useInvitations } from "@/hooks/use-invitations";
+import { useProjectPackages } from "@/hooks/use-project-packages";
 import { useProjects } from "@/hooks/use-projects";
+import {
+  mapApplicationToPackageLink,
+  mapBackendInvitationWithContext,
+} from "@/lib/portfolio";
 import { cn } from "@/lib/utils";
 import type { InvitationStatus, Project, ProjectStatus, VendorInvitation } from "@/types";
 
@@ -166,10 +173,20 @@ export function VendorIntakePage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { projects } = useProjects();
+  const { primaryPackage } = useProjectPackages(projectId);
+  const { applications, createApplication, updateApplication } = useApplications({
+    packageId: primaryPackage?.id,
+  });
+  const {
+    invitations: backendInvitations,
+    createInvitation,
+    updateInvitation,
+  } = useInvitations({
+    projectId,
+    packageId: primaryPackage?.id,
+  });
 
   const [projectTab, setProjectTab]     = useState<ProjectTab>("applicants");
-  const [pkgLinks, setPkgLinks]         = useState<PackageVendorLink[]>([]);
-  const [invitations, setInvitations]   = useState<VendorInvitation[]>(seededInvitations);
   const [selectedLinkId, setSelected]   = useState<string | null>(null);
   const [selectedCat, setSelectedCat]   = useState("");
   const [activeVendorTab, setVendorTab] = useState<VendorTab>("evaluation");
@@ -190,11 +207,21 @@ export function VendorIntakePage() {
     setRationaleOpen(false);
     setRationaleText("");
     setPendingQual(null);
-    setPkgLinks(seededPkgLinks.filter(l => l.projectId === (projectId ?? "")));
-    setInvitations(seededInvitations);
   }, [projectId]);
 
   if (!selectedProject) return <Navigate to="/projects" replace />;
+
+  const pkgLinks = useMemo(
+    () => applications.map(mapApplicationToPackageLink),
+    [applications],
+  );
+  const invitations = useMemo(
+    () =>
+      backendInvitations.map((invitation) =>
+        mapBackendInvitationWithContext(invitation, undefined, primaryPackage),
+      ),
+    [backendInvitations, primaryPackage],
+  );
 
   /* ── Computed ── */
   const linkedEntries = useMemo(() => pkgLinks.map(link => ({
@@ -235,10 +262,11 @@ export function VendorIntakePage() {
   };
 
   /* ── Actions ── */
-  function applyQualStatus(linkId: string, status: PkgQualStatus, rationale?: string) {
-    setPkgLinks(prev => prev.map(l =>
-      l.id === linkId ? { ...l, qualStatus: status, rationale, lastUpdated: today() } : l
-    ));
+  async function applyQualStatus(linkId: string, status: PkgQualStatus, rationale?: string) {
+    await updateApplication(linkId, {
+      qualificationStatus: status,
+      rationale,
+    });
   }
 
   function handleQualAction(linkId: string, status: PkgQualStatus) {
@@ -251,14 +279,15 @@ export function VendorIntakePage() {
       setRationaleOpen(true);
       return;
     }
-    applyQualStatus(linkId, status);
-    if (status === "Shortlisted") toast.success(`${selectedVendor?.name} moved to shortlist`);
-    else if (status === "Qualified") toast.success(`${selectedVendor?.name} marked as Qualified`);
+    void applyQualStatus(linkId, status).then(() => {
+      if (status === "Shortlisted") toast.success(`${selectedVendor?.name} moved to shortlist`);
+      else if (status === "Qualified") toast.success(`${selectedVendor?.name} marked as Qualified`);
+    });
   }
 
   function confirmQualAction() {
     if (!selectedLink || !pendingQual) return;
-    applyQualStatus(selectedLink.id, pendingQual, rationaleText.trim() || undefined);
+    void applyQualStatus(selectedLink.id, pendingQual, rationaleText.trim() || undefined);
     const vendorName = selectedVendor?.name ?? "Vendor";
     if (pendingQual === "Shortlisted") toast.success(`${vendorName} shortlisted`);
     else if (pendingQual === "Rejected") toast.error(`${vendorName} application rejected`);
@@ -269,12 +298,25 @@ export function VendorIntakePage() {
   }
 
   function undoQualStatus(linkId: string) {
-    applyQualStatus(linkId, "Pending Review");
+    void applyQualStatus(linkId, "Pending Review");
     toast.info("Decision undone — moved back to Pending Review");
   }
 
-  function addVendorsToPackage(newLinks: PackageVendorLink[]) {
-    setPkgLinks(prev => [...prev, ...newLinks]);
+  async function addVendorsToPackage(newLinks: PackageVendorLink[]) {
+    if (!primaryPackage) return;
+    await Promise.all(
+      newLinks.map((link) =>
+        createApplication({
+          id: link.id,
+          vendorId: link.vendorId,
+          projectId: selectedProject.id,
+          packageId: primaryPackage.id,
+          applicationStatus: link.appStatus,
+          qualificationStatus: link.qualStatus,
+          source: link.source,
+        }),
+      ),
+    );
     toast.success(`${newLinks.length} vendor${newLinks.length !== 1 ? "s" : ""} added to package`);
   }
 
@@ -374,9 +416,30 @@ export function VendorIntakePage() {
       {projectTab === "invitations" && (
         <InvitationsPanel
           invitations={invitations}
-          setInvitations={setInvitations}
           projectName={selectedProject.name}
           packageName={selectedProject.packageName}
+          onCreateInvitation={async (invitation) => {
+            if (!primaryPackage) return;
+            await createInvitation({
+              id: invitation.id,
+              projectId: selectedProject.id,
+              packageId: primaryPackage.id,
+              companyName: invitation.companyName,
+              contactName: invitation.contactPerson,
+              contactEmail: invitation.email,
+              category: invitation.tradeCategory,
+              invitedAt: invitation.invitedAt,
+              expiresAt: invitation.expiresAt,
+              status: "Invited",
+            });
+          }}
+          onResendInvitation={async (invitationId) => {
+            await updateInvitation(invitationId, {
+              status: "Invited",
+              invitedAt: today(),
+              expiresAt: addDays(new Date(), 30),
+            });
+          }}
         />
       )}
 
@@ -541,11 +604,34 @@ export function VendorIntakePage() {
           projectId={selectedProject.id}
           projectName={selectedProject.name}
           existingVendorIds={new Set(pkgLinks.map(l => l.vendorId))}
-          onAdd={addVendorsToPackage}
+          onAdd={(links) => { void addVendorsToPackage(links); }}
           onInvite={(inv, link) => {
-            setInvitations(prev => [inv, ...prev]);
-            setPkgLinks(prev => [...prev, link]);
-            toast.success(`Invitation sent to ${inv.companyName}`);
+            if (!primaryPackage) return;
+            void Promise.all([
+              createInvitation({
+                id: inv.id,
+                projectId: selectedProject.id,
+                packageId: primaryPackage.id,
+                companyName: inv.companyName,
+                contactName: inv.contactPerson,
+                contactEmail: inv.email,
+                category: inv.tradeCategory,
+                invitedAt: inv.invitedAt,
+                expiresAt: inv.expiresAt,
+                status: "Invited",
+              }),
+              createApplication({
+                id: link.id,
+                vendorId: link.vendorId,
+                projectId: selectedProject.id,
+                packageId: primaryPackage.id,
+                applicationStatus: "Invited",
+                qualificationStatus: "Not Started",
+                source: link.source,
+              }),
+            ]).then(() => {
+              toast.success(`Invitation sent to ${inv.companyName}`);
+            });
           }}
           onClose={() => setAddOpen(false)}
         />
@@ -1477,12 +1563,17 @@ function AddVendorsModal({
 /* ── Invitations Panel ───────────────────────────────────────────────────── */
 
 function InvitationsPanel({
-  invitations, setInvitations, projectName, packageName,
+  invitations,
+  projectName,
+  packageName,
+  onCreateInvitation,
+  onResendInvitation,
 }: {
   invitations: VendorInvitation[];
-  setInvitations: React.Dispatch<React.SetStateAction<VendorInvitation[]>>;
   projectName: string;
   packageName: string;
+  onCreateInvitation: (invitation: VendorInvitation) => Promise<void>;
+  onResendInvitation: (invitationId: string) => Promise<void>;
 }) {
   const [showForm, setShowForm]     = useState(false);
   const [copiedId, setCopiedId]     = useState<string | null>(null);
@@ -1496,7 +1587,7 @@ function InvitationsPanel({
     .filter(i => statusFilter === "all" || i.status === statusFilter)
     .filter(i => !q || i.companyName.toLowerCase().includes(q) || i.contactPerson.toLowerCase().includes(q) || i.email.toLowerCase().includes(q));
 
-  function handleSend() {
+  async function handleSend() {
     if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
       setFormError("Company name, contact person, email, and trade category are required.");
       return;
@@ -1520,11 +1611,15 @@ function InvitationsPanel({
       invitedBy: "FA",
       registrationLink: `https://portal.mawthuq.app/register/${token}`,
     };
-    setInvitations(prev => [inv, ...prev]);
-    setForm({ companyName: "", contactPerson: "", email: "", tradeCategory: "", projectContext: "" });
-    setFormError(null);
-    toast.success(`Invitation sent to ${inv.email}`, { description: `${inv.companyName} · expires in 30 days` });
-    setShowForm(false);
+    try {
+      await onCreateInvitation(inv);
+      setForm({ companyName: "", contactPerson: "", email: "", tradeCategory: "", projectContext: "" });
+      setFormError(null);
+      toast.success(`Invitation sent to ${inv.email}`, { description: `${inv.companyName} · expires in 30 days` });
+      setShowForm(false);
+    } catch {
+      setFormError("Could not send invitation right now.");
+    }
   }
 
   function copyLink(inv: VendorInvitation) {
@@ -1533,12 +1628,14 @@ function InvitationsPanel({
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  function resend(id: string) {
+  async function resend(id: string) {
     const inv = invitations.find(i => i.id === id);
-    setInvitations(prev => prev.map(i =>
-      i.id === id ? { ...i, status: "invited", invitedAt: today(), expiresAt: addDays(new Date(), 30) } : i
-    ));
-    if (inv) toast.success(`Invitation resent to ${inv.email}`);
+    try {
+      await onResendInvitation(id);
+      if (inv) toast.success(`Invitation resent to ${inv.email}`);
+    } catch {
+      toast.error("Could not resend invitation.");
+    }
   }
 
   const inputCls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20";

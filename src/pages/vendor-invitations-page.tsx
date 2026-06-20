@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Check,
@@ -12,10 +12,14 @@ import {
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
-import { seededInvitations, tradeCategories } from "@/data/seed";
+import { tradeCategories } from "@/data/seed";
 import { SectionHeader } from "@/components/section-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useInvitations } from "@/hooks/use-invitations";
+import { useProjectPackages } from "@/hooks/use-project-packages";
+import { useProjects } from "@/hooks/use-projects";
+import { mapBackendInvitationWithContext } from "@/lib/portfolio";
 import { cn } from "@/lib/utils";
 import type { InvitationStatus, VendorInvitation } from "@/types";
 
@@ -36,13 +40,6 @@ const statusConfig: Record<
 
 /* ── Helpers ────────────────────────────────────────────── */
 
-function generateToken() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const seg = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `MWQ-${seg(3)}${seg(3)}`;
-}
-
 function addDays(base: Date, days: number): string {
   const d = new Date(base);
   d.setDate(d.getDate() + days);
@@ -58,7 +55,9 @@ function today() {
 
 export function VendorInvitationsPage() {
   const [searchParams] = useSearchParams();
-  const [invitations, setInvitations] = useState<VendorInvitation[]>(seededInvitations);
+  const { backendProjects } = useProjects();
+  const { packages } = useProjectPackages();
+  const { invitations, createInvitation, updateInvitation } = useInvitations();
   const [showForm, setShowForm] = useState(() => searchParams.get("new") === "1");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | "all">("all");
@@ -75,11 +74,23 @@ export function VendorInvitationsPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   /* Stats */
-  const total = invitations.length;
+  const invitationCards = useMemo<VendorInvitation[]>(
+    () =>
+      invitations.map((invitation) =>
+        mapBackendInvitationWithContext(
+          invitation,
+          backendProjects.find((project) => project.id === invitation.projectId),
+          packages.find((pkg) => pkg.id === invitation.packageId),
+        ),
+      ),
+    [backendProjects, invitations, packages],
+  );
+
+  const total = invitationCards.length;
 
   /* Filtered list */
   const q = searchQuery.toLowerCase().trim();
-  const visible = invitations
+  const visible = invitationCards
     .filter((i) => statusFilter === "all" || i.status === statusFilter)
     .filter((i) =>
       !q ||
@@ -88,7 +99,7 @@ export function VendorInvitationsPage() {
       i.email.toLowerCase().includes(q),
     );
 
-  function handleSend() {
+  async function handleSend() {
     if (!form.companyName.trim() || !form.contactPerson.trim() || !form.email.trim() || !form.tradeCategory) {
       setFormError("Company name, contact person, email, and trade category are required.");
       return;
@@ -98,30 +109,46 @@ export function VendorInvitationsPage() {
       return;
     }
 
-    const token = generateToken();
     const now   = new Date();
-    const inv: VendorInvitation = {
-      id: `inv-${Date.now()}`,
-      token,
-      companyName:   form.companyName.trim(),
-      contactPerson: form.contactPerson.trim(),
-      email:         form.email.trim(),
-      tradeCategory: form.tradeCategory,
-      projectContext: form.projectContext.trim() || undefined,
-      status:        "invited",
-      invitedAt:     today(),
-      expiresAt:     addDays(now, 30),
-      invitedBy:     "FA",
-      registrationLink: `https://portal.mawthuq.app/register/${token}`,
-    };
+    const normalizedContext = form.projectContext.trim().toLowerCase();
+    const linkedPackage = normalizedContext
+      ? packages.find((pkg) =>
+          `${pkg.name} ${pkg.category}`.toLowerCase().includes(normalizedContext),
+        )
+      : undefined;
+    const linkedProject = linkedPackage
+      ? backendProjects.find((project) => project.id === linkedPackage.projectId)
+      : normalizedContext
+        ? backendProjects.find((project) => project.name.toLowerCase().includes(normalizedContext))
+        : undefined;
 
-    setInvitations((prev) => [inv, ...prev]);
-    setForm({ companyName: "", contactPerson: "", email: "", tradeCategory: "", projectContext: "" });
-    setFormError(null);
-    toast.success(`Invitation sent to ${inv.email}`, {
-      description: `${inv.companyName} · expires in 30 days`,
-    });
-    setShowForm(false);
+    try {
+      await createInvitation({
+        projectId: linkedProject?.id,
+        packageId: linkedPackage?.id,
+        companyName: form.companyName.trim(),
+        contactName: form.contactPerson.trim(),
+        contactEmail: form.email.trim(),
+        category: form.tradeCategory,
+        invitedAt: today(),
+        expiresAt: addDays(now, 30),
+        status: "Invited",
+      });
+      setForm({
+        companyName: "",
+        contactPerson: "",
+        email: "",
+        tradeCategory: "",
+        projectContext: "",
+      });
+      setFormError(null);
+      toast.success(`Invitation sent to ${form.email.trim()}`, {
+        description: `${form.companyName.trim()} · expires in 30 days`,
+      });
+      setShowForm(false);
+    } catch {
+      setFormError("Could not send invitation right now.");
+    }
   }
 
   function copyLink(inv: VendorInvitation) {
@@ -130,19 +157,21 @@ export function VendorInvitationsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  function resend(id: string) {
-    const inv = invitations.find((i) => i.id === id);
-    setInvitations((prev) =>
-      prev.map((i) =>
-        i.id === id
-          ? { ...i, status: "invited", invitedAt: today(), expiresAt: addDays(new Date(), 30) }
-          : i,
-      ),
-    );
-    if (inv) {
-      toast.success(`Invitation resent to ${inv.email}`, {
-        description: `${inv.companyName} · new link expires in 30 days`,
+  async function resend(id: string) {
+    const inv = invitationCards.find((item) => item.id === id);
+    try {
+      await updateInvitation(id, {
+        status: "Invited",
+        invitedAt: today(),
+        expiresAt: addDays(new Date(), 30),
       });
+      if (inv) {
+        toast.success(`Invitation resent to ${inv.email}`, {
+          description: `${inv.companyName} · new link expires in 30 days`,
+        });
+      }
+    } catch {
+      toast.error("Could not resend invitation.");
     }
   }
 
@@ -255,7 +284,7 @@ export function VendorInvitationsPage() {
       {/* ── Status filter tabs ── */}
       <div className="flex flex-wrap gap-2">
         {(["all", "invited", "opened", "started", "submitted", "expired", "bounced", "declined"] as const).map((s) => {
-          const count = s === "all" ? total : invitations.filter((i) => i.status === s).length;
+          const count = s === "all" ? total : invitationCards.filter((i) => i.status === s).length;
           const cfg   = s === "all" ? null : statusConfig[s];
           return (
             <button
@@ -506,4 +535,3 @@ function TimelinePoint({ label, value, done }: { label: string; value?: string; 
 
 const inputCls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20";
-

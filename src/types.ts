@@ -57,6 +57,13 @@ export interface NavigationItem {
 
 export type ProjectStatus = "Active" | "Planning" | "Tendering" | "Closed";
 
+export type BackendProjectStatus =
+  | "Planning"
+  | "Tendering"
+  | "Active"
+  | "Completed"
+  | "Archived";
+
 export interface ProjectCategory {
   name: string;
   subCategories: string[];
@@ -90,6 +97,25 @@ export interface Project {
   requiredExperience?: string[];
   requiredCertifications?: string[];
   config?: ProjectConfig;
+}
+
+export interface BackendProject {
+  id: string;
+  name: string;
+  arabicName?: string;
+  location: string;
+  status: BackendProjectStatus;
+  description?: string;
+  startDate?: string;
+  targetCompletionDate?: string;
+  timeline?: string;
+  categories?: string[];
+  reviewers?: ReviewerRole[];
+  requiredExperience?: string[];
+  requiredCertifications?: string[];
+  config?: ProjectConfig;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ScoringWeights {
@@ -259,6 +285,95 @@ export interface VendorScorecard {
   findings: ScorecardFinding[];
 }
 
+export type PackageReadinessStatus =
+  | "Not Started"
+  | "Sourcing Vendors"
+  | "Awaiting Submissions"
+  | "Under Review"
+  | "Vendor Gap"
+  | "Ready for Shortlist"
+  | "Ready for Tender"
+  | "Blocked";
+
+export type ApplicationStatusValue =
+  | "Invited"
+  | "Opened"
+  | "In Progress"
+  | "Submitted"
+  | "In Review"
+  | "Clarification Requested"
+  | "Review Complete"
+  | "Withdrawn";
+
+export type QualificationStatusValue =
+  | "Not Started"
+  | "Pending Review"
+  | "Qualified"
+  | "Conditionally Qualified"
+  | "Rejected"
+  | "Shortlisted"
+  | "Awarded";
+
+export type InvitationStatusValue =
+  | "Invited"
+  | "Opened"
+  | "In Progress"
+  | "Submitted"
+  | "Expired"
+  | "Bounced"
+  | "Declined";
+
+export interface BackendPackage {
+  id: string;
+  projectId: string;
+  name: string;
+  category: string;
+  valueBand: string;
+  status: "Open" | "Evaluating" | "Closed" | "Awarded";
+  readinessStatus: PackageReadinessStatus;
+  requiredVendorCount: number;
+  deadline?: string;
+  criteria?: string[];
+  primaryForProject?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorPackageApplication {
+  id: string;
+  vendorId: string;
+  projectId: string;
+  packageId: string;
+  applicationStatus: ApplicationStatusValue;
+  qualificationStatus: QualificationStatusValue;
+  score?: number;
+  recommendation?: VendorStatus;
+  openBlockers?: string[];
+  rationale?: string;
+  source?: "invited" | "added_from_vm" | "direct";
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt: string;
+}
+
+export interface BackendInvitation {
+  id: string;
+  vendorId?: string;
+  projectId?: string;
+  packageId?: string;
+  applicationId?: string;
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  category?: string;
+  status: InvitationStatusValue;
+  invitedAt: string;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt: string;
+}
+
 export type InvitationStatus =
   | "invited"
   | "opened"
@@ -332,6 +447,104 @@ export interface ReportPreview {
   auditTrail: AuditRecord[];
 }
 
+export interface CommandCenterKpis {
+  totalProjects: number;
+  activeProjects: number;
+  totalPackages: number;
+  packagesNeedingAttention: number;
+  pendingReviews: number;
+  totalInvitations: number;
+  activeInvitations: number;
+  submittedApplications: number;
+  shortlistedApplications: number;
+  criticalBlockers: number;
+}
+
+export interface CommandCenterAttentionPackage {
+  packageId: string;
+  projectId: string;
+  projectName: string;
+  packageName: string;
+  category: string;
+  readinessStatus: PackageReadinessStatus;
+  invitedCount: number;
+  submittedCount: number;
+  qualifiedCount: number;
+  requiredVendorCount: number;
+  mainBlocker: string;
+  nextAction: string;
+}
+
+export interface CommandCenterProjectSummary {
+  projectId: string;
+  name: string;
+  location: string;
+  status: BackendProjectStatus;
+  packageCount: number;
+  invitedCount: number;
+  submittedCount: number;
+}
+
+export interface CommandCenterReviewQueueItem {
+  applicationId: string;
+  vendorId: string;
+  projectId: string;
+  packageId: string;
+  applicationStatus: ApplicationStatusValue;
+  qualificationStatus: QualificationStatusValue;
+  lastActivityAt: string;
+  score?: number;
+}
+
+export interface CommandCenterVendorPipelineCounts {
+  invited: number;
+  opened: number;
+  inProgress: number;
+  submitted: number;
+  inReview: number;
+  qualified: number;
+  shortlisted: number;
+}
+
+export interface CommandCenterBlocker {
+  applicationId: string;
+  vendorId: string;
+  projectId: string;
+  packageId: string;
+  blocker: string;
+  severity: "critical" | "warning";
+  lastActivityAt: string;
+}
+
+export interface CommandCenterDeadline {
+  kind: "package" | "invitation";
+  id: string;
+  projectId?: string;
+  packageId?: string;
+  label: string;
+  dueAt: string;
+  status: string;
+}
+
+export interface CommandCenterActivityItem {
+  id: string;
+  title: string;
+  detail: string;
+  when: string;
+  tone?: "neutral" | "success" | "warning";
+}
+
+export interface CommandCenterSummary {
+  kpis: CommandCenterKpis;
+  packagesNeedingAttention: CommandCenterAttentionPackage[];
+  activeProjectsSummary: CommandCenterProjectSummary[];
+  pendingReviewQueue: CommandCenterReviewQueueItem[];
+  vendorPipelineCounts: CommandCenterVendorPipelineCounts;
+  criticalBlockers: CommandCenterBlocker[];
+  upcomingDeadlines: CommandCenterDeadline[];
+  recentActivity: CommandCenterActivityItem[];
+}
+
 export interface BackendState {
   vendors: VendorRecord[];
   documents: VendorDocument[];
@@ -340,5 +553,9 @@ export interface BackendState {
   fieldReviewStates: FieldReviewState[];
   ruleReviewStates: RuleReviewState[];
   packageConfig: PackageSetupConfig;
+  projects: BackendProject[];
+  packages: BackendPackage[];
+  vendorPackageApplications: VendorPackageApplication[];
+  invitations: BackendInvitation[];
   reports?: Record<string, ReportPreview>;
 }

@@ -22,7 +22,7 @@ async function ensureLocalStore() {
 async function readLocalState(): Promise<BackendState> {
   await ensureLocalStore();
   const raw = await fs.readFile(storePath, "utf8");
-  return JSON.parse(raw) as BackendState;
+  return normalizeState(JSON.parse(raw) as Partial<BackendState>);
 }
 
 async function writeLocalState(state: BackendState) {
@@ -40,7 +40,7 @@ export async function readState(): Promise<BackendState> {
       .maybeSingle();
 
     if (!error && data?.state_json) {
-      return data.state_json as BackendState;
+      return normalizeState(data.state_json as Partial<BackendState>);
     }
 
     await supabase.from("mawthuq_app_state").upsert({
@@ -53,11 +53,12 @@ export async function readState(): Promise<BackendState> {
 }
 
 export async function writeState(state: BackendState) {
+  const normalized = normalizeState(state);
   const supabase = getSupabaseAdminClient();
   if (supabase) {
     const { error } = await supabase.from("mawthuq_app_state").upsert({
       id: "default",
-      state_json: state,
+      state_json: normalized,
     });
 
     if (!error) {
@@ -65,10 +66,28 @@ export async function writeState(state: BackendState) {
     }
   }
 
-  await writeLocalState(state);
+  await writeLocalState(normalized);
 }
 
 export async function resetState() {
   await writeState(seededBackendState);
   return seededBackendState;
+}
+
+function normalizeState(state: Partial<BackendState>): BackendState {
+  return {
+    vendors: state.vendors ?? seededBackendState.vendors,
+    documents: state.documents ?? seededBackendState.documents,
+    extractions: state.extractions ?? seededBackendState.extractions,
+    auditRecords: state.auditRecords ?? seededBackendState.auditRecords,
+    fieldReviewStates: state.fieldReviewStates ?? seededBackendState.fieldReviewStates,
+    ruleReviewStates: state.ruleReviewStates ?? seededBackendState.ruleReviewStates,
+    packageConfig: state.packageConfig ?? seededBackendState.packageConfig,
+    projects: state.projects ?? seededBackendState.projects,
+    packages: state.packages ?? seededBackendState.packages,
+    vendorPackageApplications:
+      state.vendorPackageApplications ?? seededBackendState.vendorPackageApplications,
+    invitations: state.invitations ?? seededBackendState.invitations,
+    reports: state.reports ?? seededBackendState.reports,
+  };
 }

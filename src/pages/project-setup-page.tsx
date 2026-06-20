@@ -187,7 +187,7 @@ export function ProjectSetupPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) { setActiveTab("basics"); return; }
 
     const config: ProjectConfig = {
@@ -215,19 +215,23 @@ export function ProjectSetupPage() {
       config,
     };
 
-    if (isEdit && editId) {
-      updateProject(editId, sharedFields);
-      toast.success(`Project updated: ${form.name}`);
-    } else {
-      addProject({
-        id: `proj-${Date.now()}`,
-        ...sharedFields,
-        submittedCount: 0,
-        totalInvited: 0,
-      });
-      toast.success(`Project created: ${form.name}`);
+    try {
+      if (isEdit && editId) {
+        await updateProject(editId, sharedFields);
+        toast.success(`Project updated: ${form.name}`);
+      } else {
+        await addProject({
+          id: `proj-${Date.now()}`,
+          ...sharedFields,
+          submittedCount: 0,
+          totalInvited: 0,
+        });
+        toast.success(`Project created: ${form.name}`);
+      }
+      void navigate("/vendor-intake");
+    } catch {
+      toast.error("Could not save project.");
     }
-    void navigate("/vendor-intake");
   }
 
   /* ── Render ── */
