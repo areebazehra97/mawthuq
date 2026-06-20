@@ -84,6 +84,8 @@ app.post("/api/vendors/:vendorId/upload", async (req, res) => {
       confidenceScore: 74,
       sizeLabel: formatSize(file.size),
       source: "Manual Upload",
+      version: 1,
+      isCurrentVersion: true,
       mimeType: file.mimeType,
       contentPreview: `Uploaded ${file.fileName} for live AI extraction.`,
       uploadedBy: "Procurement Analyst",
