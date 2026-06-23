@@ -9,6 +9,19 @@ import { useCommandCenterSummary } from "@/hooks/use-command-center-summary";
 export function AnalyticsPage() {
   const { vendors } = useDemoVendors();
   const { summary } = useCommandCenterSummary();
+  const activePackageCount = summary
+    ? summary.activeProjectsSummary.reduce(
+        (count, project) => count + project.packageCount,
+        0,
+      )
+    : 0;
+  const vendorsInPipelineCount = summary
+    ? summary.vendorPipelineCounts.invited +
+      summary.vendorPipelineCounts.opened +
+      summary.vendorPipelineCounts.inProgress +
+      summary.vendorPipelineCounts.submitted +
+      summary.vendorPipelineCounts.inReview
+    : 0;
 
   const passCount = vendors.filter((vendor) => vendor.status === "PASS").length;
   const conditionalCount = vendors.filter((vendor) => vendor.status === "CONDITIONAL").length;
@@ -64,18 +77,14 @@ export function AnalyticsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Active Packages"
-          value={String(summary?.kpis.totalPackages ?? 0)}
+          value={String(activePackageCount)}
           supporting={`Across ${summary?.kpis.activeProjects ?? 0} active projects`}
           icon={<Layers className="h-5 w-5" />}
         />
         <MetricCard
           label="Vendors in Pipeline"
-          value={String(
-            summary
-              ? summary.kpis.totalInvitations + summary.kpis.submittedApplications
-              : 0,
-          )}
-          supporting="Invited across all packages"
+          value={String(vendorsInPipelineCount)}
+          supporting="Active applications across all packages"
           icon={<Users className="h-5 w-5" />}
         />
         <MetricCard
